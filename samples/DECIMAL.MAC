@@ -1,0 +1,137 @@
+.Z80
+
+CSEG
+        ORG 0h
+TESTE:
+		ld hl,32128d
+		ld c,10d
+		call WRT_DEC
+		ld hl,255d
+		ld c,10d
+		call WRT_DEC
+		ld hl,254d
+		ld c,10d
+		call WRT_DEC
+		ld hl,32126d
+		ld c,10d
+		call WRT_DEC
+        jp 0
+
+;-------------------------------------------------------------------------;
+; Esta procedure escreve uma word, unsigned em notacao decimal            ;
+;                                                                         ;
+;      HL: Byte a ser convertido para decimal.                            ;
+;                                                                         ;
+;     Usa: WRT_HD                                                         ;
+;-------------------------------------------------------------------------;
+WRT_DEC:
+        ld c,10d                ;por 10d
+        ld b,0                  ;Conta o numero de digitos na pilha
+_nozwd:	push bc
+		call DIVWB              ;Divide
+		pop bc
+        push af                 ;Salva um digito
+        inc b                   ;Mais um digito adicionado a pilha
+		ld a,0
+		cp h
+		jr nz,_nozwd
+		ld a,0
+		cp l
+		jr nz,_nozwd
+_wrlop:	pop af
+		ld d,a
+		push bc
+		call WRT_HD
+		pop bc
+		djnz _wrlop
+		ret
+
+;-------------------------------------------------------------------------;
+; Esta rotina divide um numero de 16 bits por outro de 8 bits             ;
+;                                                                         ;
+;       HL: O word que contem o numerador                                 ;
+;        C: O denomionador                                                ;
+;                                                                         ;
+;  Retorna: A com o resto                                                 ;
+;           HL resultado                                                  ;
+;-------------------------------------------------------------------------;
+DIVWB:
+		push bc
+        ld b,16                 ;Divisao de 16 bits
+        xor a                   ;Zera A
+_LPDWB:
+        add hl,hl               ;Soma HL x Vezes para achar o quociente
+        rla                     ;Isola Carry e
+        cp c                    ;Compara denominador
+        jr c,$+4                ;Salta para LOOP (break)
+        inc l                   ;Incrementa
+        sub c                   ;Subtrai o denominador
+        djnz _LPDWB             ;Final do LOOP
+		pop bc
+        ret
+
+;-------------------------------------------------------------------------;
+; Esta procedure converte o byte no registrador DL para hexa e imprime    ;
+; os dois digitos na posicao corrente do cursor                           ;
+;                                                                         ;
+;       D: Byte a ser convertido para hexa.                               ;
+;                                                                         ;
+;     Usa: WRT_HD                                                         ;
+;-------------------------------------------------------------------------;
+WRT_HEX:
+        ld a,d                  ;Faz uma copia do byte
+        sra a                   ;Pega o nibble superior
+        sra a
+        sra a
+        sra a
+        push de
+        ld d,a
+        call WRT_HD             ;Imprime o primeiro digito
+        pop de
+        ld a,d                  ;Pega o nibble inferior
+        and 0Fh                 ;Remove o nibble superior
+        push de
+        ld d,a
+        call WRT_HD             ;Imprime o segundo digito
+        pop de
+        ret
+;-------------------------------------------------------------------------;
+; Esta rotina converte os quatro bits mais baixos de D num digito hexa    ;
+; e imprime na tela                                                       ;
+;                                                                         ;
+;       D: Os quatro digitos inferiores contendo o numero em hexa         ;
+;                                                                         ;
+;     Usa: WRT_CHR                                                        ;
+;                                                                         ;
+;-------------------------------------------------------------------------;
+WRT_HD:
+        push de
+        ld a,d                  ;Usa registro A para calculos
+        cp 10                   ;O nibble e <10?
+        jp p,HEX_LTR            ;Nao, converte em letra
+        add a,"0"               ;Sim, converte em numero
+        jp WRT_DG               ;Agora imprime o caractere
+HEX_LTR:
+        add a,"A"-10            ;Converte para letra hexa
+WRT_DG:
+        ld d,a
+        call WRT_CHR            ;Imprime o caractere na tela
+        pop de
+        ret
+
+;-------------------------------------------------------------------------;
+; Esta rotina imprime um caractere na tela usando uma funcao do MSX-DOS   ;
+;                                                                         ;
+;       D: O byte do caractere a ser impresso                             ;
+;                                                                         ;
+;-------------------------------------------------------------------------;
+WRT_CHR:
+        push de                 ;Salva os registradores usados
+        ld c,02h                ;Chamada para impressao de caractere
+        ld e,d                  ;Caractere em E
+        call 0005h              ;Imprime o caractere em E
+        pop de                  ;Recupera os registradores usados
+        ret                     ;E retorna
+
+
+END TESTE

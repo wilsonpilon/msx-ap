@@ -1,0 +1,337 @@
+
+HAGAMOS MEMORIA
+---------------
+
+La memoria de nuestros MSX es, fundamentalmente, una de las partes más vitales e 
+importantes del sistema. Lógicamente sola no sirve para nada, ya que sin un 
+microprocesador que la maneje y utilice, no tiene ningún sentido. Pero así como 
+hay partes del MSX que son perfectamente prescindibles para su funcionamiento, 
+tales como un chip de sonido, una disquetera, etc... sin la memoria no 
+tendríamos nada. 
+
+Al ser el MSX un ordenador personal incluso desde su versión más reducida (8k de 
+Ram), cuenta con una cantidad de memoria bastante superior a cualquier 
+videoconsola de la época, y que lo dota de la capacidad de hacer "algo más" que 
+juegos. Le da la capacidad de tener un sistema operativo, un BASIC, utilidades, 
+etc... algo impensable para otros sistemas de entretenimiento, incluso para 
+algunos otros ordenadores personales de la época. 
+
+Pero todo esto que suena tan bonito tiene un pequeño problema en MSX: La 
+ubicación de la RAM es totalmente desconocida, en su gran mayoría, para el 
+programador. Aunque es cierto que el sistema operativo de disco MSXDOS ya en su 
+versión más vieja nos informa un poco de la ubicación de esta Ram, solo hasta la 
+aparición del MSXDOS 2 no tuvimos un gestor de RAM en MSX. E incluso este, no es 
+100% perfecto pues solo nos reconoce los denominados "memory mapper", 
+inexistentes de fábrica en cualquier MSX de primera generación. 
+
+Realmente trabajar sobre MSXDOS2 tiene muchísimas ventajas para el programador 
+ya que cuenta con un sistema operativo que realiza toda la faena sucia por él, 
+como cualquier sistema operativo que se precie. Pero todo esto era inviable para 
+la programación de utilidades/soft de entretenimiento ya que pocos podrían ser 
+los privilegiados en tener DOS2 en sus máquinas, además de ser algo 
+relativamente "moderno" en el standard.
+
+Por lo tanto, la ubicación de la memoria ha producido más de un dolor de cabeza 
+a los programadores del standard. Bueno, más bien a los programadores de juegos 
+en cassette del standard. Ya que, salvo algunos *raros casos* ningún rom o 
+megarom de MSX conocido ha usado jamás más de 8 ó 16k de Ram, y esa porción de 
+memoria si es conocida para el programador y además posicionada adecuadamente 
+por el MSX al arrancar. 
+
+El MSX es y será un sistema versátil, muy versátil que permitía a cualquier 
+fabricante posicionar la memoria de la forma que mejor le viniese. Es, desde 
+mi punto de vista, una gran ventaja y constituye sin duda alguna lo más grande de nuestro sistema. Pero se ha convertido en un problema. Un problema que sufrimos los usuarios en su época dorada por programas incompatibles, y un problema que ahora parece renacer con el boom del software mal denominado amateur. Así que intentaremos en este artículo ayudar a erradicar la gran 
+mayoría de esos problemas. El artículo no pretende meterse en temas de memory 
+mappers y sistemas operativos, hablaremos básicamente de búsqueda de memoria y 
+obtención de slots/subslots de 64k básicas. Hablamos entonces de un artículo 
+relacionado más con la primera generación, y casi directamente relacionado con 
+el formato ROM, aunque las rutinas son válidas para otros tipos de programas.
+
+
+LEYENDAS URBANAS
+----------------
+
+Como cualquier sistema que cuente con muchos años de existencia, el MSX cuenta 
+con múltiples leyendas urbanas o falsos rumores (como queramos llamarlos) en 
+muchos de sus ámbitos. Y la programación no podría estar exenta de ellos. No se 
+puede acusar a nadie sobre este hecho. La información técnica del standard nunca 
+ha sido algo al alcance de la mano hasta nuestra época actual. Incluso ahora 
+mismo existen algunas lagunas para los no-japoneses. Pasemos pues a enumerar 
+algunos de esos conocidos casos, dos de ellos.
+
+* Si el slot de la memoria de la pagina 3 es xxxx, pongo ese slot en el resto de 
+páginas del Z80 y ya tengo ubicadas las 64k: 
+
+FALSO. Aquí tenemos 3 problemas. Primero no sabemos si el equipo cuenta con 64k 
+de Ram. Segundo que posicionando el slot en el resto de páginas, aun en el caso 
+de que la memoria este toda en el mismo slot, podríamos obtener un bonito 
+cuelgue ya que hay que tener en cuenta los SUBSLOTS. Y tercero, que, como se 
+menciona antes, no sabemos si toda la memoria está en el mismo slot. 
+
+¿Porqué se ha extendido este rumor? Pues por 2 razones. La primera que en la 
+gran mayoría de casos, efectivamente, la memoria está toda en el mismo slot. La 
+segunda porque en MSX2 esto si es funcional, excepto por el tema del subslot que 
+"solucionabamos" con el famoso POKE -1, XX.
+
+* La memoria mínima de un MSX es 16k de Ram.
+
+FALSO. La memoría mínima de un MSX es 8k de Ram. Esa memoria se posiciona a 
+partir de la dirección 0E000h. Y eso es con lo único que podemos contar como 
+realmente seguro. 
+
+De hecho, nos sorprenderíamos de la *gran cantidad de juegos* que existen para 
+nuestro micro que solo hacen uso de esa cantidad. 
+
+
+YA, PERO YO QUIERO USAR MÁS...
+------------------------------
+
+Vaale. Que si, que tú quieres usar más de 16k. No soy quien para impedírtelo, 
+pero si me veo obligado a ayudarte entonces en su búsqueda. 
+
+Antes de empezar, quisiera dejar claro que las rutinas que aquí se explican 
+hacen uso de la rutina de búsqueda de memoria en un slot del driver de los 
+interfaces de disco de MSX. Esto quiere decir que son bastante fiables. También 
+he realizado pruebas en multiples equipos con resultados satisfactorios. Pero no descarto, como siempre, algún problema puntual o algún error. 
+
+
+
+DÓNDE ESTA LA MEMORIA, MATARILE RILE RILE
+------------------------------------------
+
+Partamos de una base. Y como cualquier base para partir de ella, intentaremos 
+que sea sólida. La BIOS ROM de nuestros MSX lo primero que hace, por necesidad 
+propia, ya que tiene que posicionar sus "variables del sistema", es buscar la 
+RAM para la página 3 del Z80, concretamente le interesa una pequeña zona que va 
+desde 0F380h hasta 0FFFFh. Si, en efecto, esto quiere decir que el sistema ya 
+nos "roba" una importante cantidad de memoria, 3200 bytes. Y eso sin contar la 
+posibilidad de tener disco, y, el más que necesario espacio de pila. 
+
+Entonces, sumando que la BIOS busca la memoria de la página 3, y que el 
+ordenador con menos memoria disponible tiene 8k, pues ya sabemos, como antes 
+hemos dicho que tenemos fijos para nosotros la memoria comprendida desde 0E000h 
+hasta 0F380h, los  nada despreciables 4992 bytes. Eso si, hablando siempre de un 
+programa ejecutado desde una ROM, y que no tenga necesidad de usar disco. 
+
+Que si, que si, que hablamos de usar más de 16k. Pero veamos que tenemos. 
+Tenemos una zona de memoria segura y un slot/subslot donde ya sabemos que hay 
+RAM. Suficiente. Ya podemos empezar a buscar el resto de la memoria.
+
+Lo primero que tenemos que ver es si el MSX cuenta con 16k. Si no tiene 16k, 
+casi que buscar el resto es inútil. No he visto ningún documento que lo prohiba, 
+pero no tiene mucho sentido dotar al MSX de 16k en un slot para una página no 3 
+y 8k en otro slot para la pagina 3. Ningún sentido. De hecho, lo QUE SI PUEDE 
+PASAR es que el MSX tenga 8k de fábrica y se le ponga una expansión de memoria. 
+En ese caso, aunque tengamos que asegurarnos primeramente que el MSX tiene 16k, 
+la BIOS del MSX, que es muy lista ya ha posicionado, seguro, en la página 3, el 
+slot subslot con más memoria. Es decir, que si tiene uno de 16k y otro de 8k, 
+tendremos ya posicionado el de 16k. 
+
+Volviendo a los casos lógicos de fabricación de MSX, si el MSX tiene 16k de Ram, 
+los 8k extras están justo debajo de los 8k obligados. Es decir, que forman un 
+solo bloque de 16k que empieza en 0C000h, hasta 0FFFFh, y haciendo la misma 
+cuenta que antes con la memoria usada por la BIOS pues nos da de 0C000h hasta 
+0F380h. Impresionante. 13184 bytes para nosotros.
+
+Sigamos con los casos normales y habituales en el standard. 32k de Ram. Un 
+ordenador con 32k de Ram tiene la RAM en dos bloques de 16k, no obligatoriamente 
+en el mismo slot/subslot. Y esa memoria se posiciona desde 08000h hasta 0FFFFh. 
+Pero aquí ya empiezan los problemas. Necesitamos averiguar si existe o no y 
+encima POSICIONARLA en la zona visible del Z80 para poder utilizarla. Ja. Ahi es 
+nada. Eso si, de nuevo, hablando siempre desde un ROM. Porque, chica lista la 
+BIOS y el interprete BASIC ya nos la colocan. Cuando arrancamos el MSX y el 
+mismo llega al BASIC y *siempre que el ordenador tenga 32k* ya tendremos posicionada esa memoria en el espacio visible del Z80. Y además si la cantidad de memoria que nos da la instrucción FRE(0), supera los 20k, ya sabemos que fijo que ese ordenador tiene 32k. Todo un avance, no? 
+
+Más casos lógicos añadiendo memoria. 64k. Sip, paso a este modo porque *no tengo conocimiento de ningún MSX con 48k*. Eso no quiere decir que no existan, aunque pondría la mano en el fuego a que no existen desde ya. Pero en el hipotético caso de existir, esa memoria la tendríamos desde 04000h a 0FFFFh. Así es como se implanta la memoria en MSX, de "arriba a abajo". Pero vamos, ni caso, este MSX no existe. Será un Spectrum, fijo. A lo que íbamos, 64k. De nuevo, posibilidad de que esas 32k extra sobre un ordenador de 32k pueden partirse en dos bloques de 16k y estar cada bloque en un slot/subslot. Por si eso no fuese poco, el BASIC ya no las "ve". Y para rematar el único soft, clásico, que las usa y ve es el MSXDOS. Esto se anima. 
+
+Pero aquí no termina la cosa. Que en este pequeño repaso de implementación de memoria en un MSX *siempre* he dado por supuesto que cada extra se ha ido añadiendo en una página del Z80 diferente. ¿Qué quiere decir esto? Pues que el MSX puede tener, perfectamente 64k. Pero no 64k que vayan desde 0 a 0FFFFh, si no que puede tener 32k repartidas en dos slots/subslots diferentes y ambas en la zona de 08000h a 0FFFFh. Toma lio! ¿Tiene el MSX 64K? Pues si, si lo tiene, pero es que resulta que las tiene distribuidas de una manera que, actualmente y hasta donde yo conozco, NINGUN soft va a utilizar correctamente. 
+
+PERO NO BUSCAMOS 64K?
+----------------------
+
+Si. Pero 64k no de cualquier manera. 64k paginados de 0 a 0FFFFH es lo que queremos. Y, encima, nos vamos a poner un poco pijos y también queremos saber esas 64k, hablando de direcciones son lineales, pero también si están en el mismo slot/subslot todas. 
+
+¿Qué queeé? Si, ya he dicho que es pijotería, pero es algo MUY interesante para según que utilidades, saber si realmente la memoria está toda en el mismo slot/subslot. Os pongo el ejemplo clásico: un emulador de ROMS en RAM. Por fuerza necesita que toda sea memoria sea lineal, ya que emula una ROM que es líneal. Así que, si esa memoria no es lineal (hablando siempre en temas de slots/subslots), difícilmente funcionaría el ROM emulado en RAM. Es algo muy específico, lo se, pero intentaremos que nuestras rutinas también nos informen de eso. 
+
+Aunque realmente para un soft nuevo que necesite más memoria de 8k/16k le es indiferente su ubicación. 
+
+
+MENUDO ROLLO ME HAS SOLTADO Y TODAVIA NO ME HAS DICHO NADA
+-----------------------------------------------------------
+
+Totalmente de acuerdo. Mucha explicación, mucho lio, seguramente estéis más liados que cuando empezásteis el artículo y encima no he dado ninguna solución. Me interesa. Si aprendéis todo, mis horas como colaborador de la revista están contadas. Fuera bromas, vamos ya con la parte programativa y seria. Explicación de la rutina que dios sabe donde maquetarán los hacedores de esta revista, pero seguro que está cerca de este texto. 
+
+En esta ocasión la rutina es muy sosa. No nos muestra nada en pantalla, ni suena, ni tenemos nada moviéndose en ella. Sencillamente rellena unas variables para que el programador sepa a que atenerse. Cada cual que aproveche estas rutinas como mejor pueda y las extienda. 
+
+Después de la típica y obligada según las normas del estandard inicialización de la ROM, es decir, desconectar interrupciones, posicionar el modo de interrupciones 1 del Z80 e *inicializar la pila*, el programa llama a 3 rutinas que pasamos a comentar:
+
+<searchramnormal> ¿A que mola mucho mezclar en las rutinas la mitad de cosas en inglés y la mitad en castellano? Pues nada, toca apechugar porque no se inglés y adquirí esa mala costumbre. A lo que vamos. Esta rutina es el pilar base de todas. Lo que hace es buscar por todos los slots/subslots del sistema 16k para cada pagina del Z80. Intenta buscar 64k lineales, es decir, que ocupen el rango de direcciones de 0 a 0FFFFh.
+
+<searchramall> Para futuras aplicaciones. Busca TODA la Ram que tiene el MSX. Toda toda. Todos los segmentos de 16k que puede encontrar para todas la páginas del Z80 a excepción de la página 3.  Por si alguien quiere, en un futuro,  hacer alguna aplicación que utilice toda la RAM posible. 
+
+<searchramlineal> De la que hemos hablado unos párrafos antes. La rutina que busca que además de que la RAM sea lineal en rango de direcciones se encuentre toda en el mismo slot/subslot.
+
+
+SEARCHRAMNORMAL
+----------------
+
+La primera de todas y rutina más importante de las 3, ya que las demás se nutren de sus resultados, es esta. Al principio del artículo hemos hablado de las rutinas de una diskRom. Y ahora vamos a hablar un poco de ella, aunque no sea tema de este artículo, pues nos da una valiosa información. La diskRom necesita saber algunas cosas para inicializarse, a saber:
+
+* Si el ordenador cuenta con 16k de Ram al menos: En caso contrario no se inicializa el driver. Un ordenador con 8k no soporta ningún driver de disco.
+
+* Si hay 64k lineales para ejecutar el MSXDOS: De lo contrario no deja arrancar el MSXDOS y salta directamente al diskBasic.
+
+Así que, por fuerza, una DiskRom busca memoria. Pero no toda. No. Se aprovecha de lo que la BIOS ya ha hecho por ella. En principio solo busca memoria en dos páginas del Z80: La 0 y la 1. Esto es así porque aprovecha que la BIOS ya tiene que buscar esas páginas para el BASIC y las utiliza. No hace la faena dos veces. La diskROM tiene 4 variables que utiliza para almacenar el slot/subslot de esas 4 páginas, llamadas RAMADx, donde x es 0,1,2,3. Tanto 3 como 2 las rellena del slot/subslot posicicionado en la inicialización de la diskrom, algo parecido a lo que hacemos nosotros con la página 3, que después veremos. Las otras 2, es decir, RAMAD0 Y RAMAD1, en principio las inicializa con el slot/subslot de la BIOS  (EXPTBL). Y seguidamente busca la memoria, exactamente como nosotros para esas dos páginas. 
+
+A la hora de inicializar el MSXDOS comprueba si el valor de RAMAD0 y RAMAD1 es igual a EXPTBL, y si es diferente, inicializa el MSXDOS. Si es igual, no se ha encontrado memoria. 
+
+Esto puede ir un poco en contra de lo dicho al principio del artículo sobre el MSX y su versatilidad: No, no es 100% versátil. El código de la diskROM ya nos informa e indica que si existen unas pequeñas normas. Y una de ellas es que NO es posible poner memoria en el slot de la BIOS para la página 0 y 1 del Z80. Cae por su propio peso, ya que, o está la BIOS o está la memoria, y sin BIOS no hay MSX. Pero, atención: SI es posible poner memoria en el slot de la BIOS para la página 2 y 3. Y no es que sea posible, es que hay un modelo de MSX conocido que así lo tiene: Toshiba HX20, de 64k de RAM. La configuración de memoria de este ordenador es, sin lugar a dudas, de las más curiosas conocidas. Dispone de 16k para la página 0 en slot 3-x (expandido), otras 16k para página 1 en slot 3-x (expandido), así que YA cumple la norma, PERO la memoria para página 2 y 3 está en el slot 0, vamos el mismo de la BIOS.
+
+Esta pequeña historia viene a confirmar lo que ya hemos dicho: Las posibilidades del MSX son muchas y variables.  Aunque imagino que los dueños de este ordenador, sobre todo Europeos, no muestren ningún síntoma de alegría por esto. Estoy muy seguro de que la gran mayoría de juegos en cassette Europeos no funcionaban en su máquina. 
+
+Y ahora, SI, con toda esta información podemos pasar a explicar las rutinas. 
+
+Lo primero que hace la rutina es inicializar nuestras variables:
+
+[ramtypus] Contiene al final de la rutina el tipo de RAM que ha encontrado en el sistema:
+
+	0 Ram8K
+	1 Ram16k
+	2 Ram32k
+	3 Ram48k
+	4 Ram64k
+	
+La ponemos a 0 para empezar, es lo único que sabemos seguro, que nuestro ordenador cuenta con 8k de RAM.
+
+[rampage0,1,2,3] las inicializamos con el slot de la BIOS, para ser igual de chulos que una diskRom. (aunque luego hagamos la comprobación de diferente forma). Estas variables contienen al final de la rutina el slot/subslot donde ha encontrado 16k de Ram para esa página del Z80. Siempre y cuando hagamos caso antes a ramtypus. Expliación: Si ramtypus nos dice que el ordenador es de 16K, el contenido de rampage0,1 y 2 nos es indiferente, pues no ha encontrado más RAM. 
+
+[ramcheck0,1,2,3] Lo utilizamos para comprobar si en alguna de esas páginas se ha encontrado RAM. 
+
+Seguidamente, la rutina llama a una subrutina llamada <search_slotram>. Esta rutina lo único que hace es averiguar el slot/subslot posicionado en la página 3. Si hacemos memoria (nunca mejor dicho), ya hemos comentado que de lo único que podemos estar seguros al ejecutarse esta ROM es de que en la página 3 ya tenemos RAM. Entonces, sin ningún tipo de búsqueda especial rellenamos la variable [rampage3] pues la BIOS ya ha hecho eso por nosotros.
+
+Pero continuamos nuestra rutina. Lo siguiente que tenemos que averiguar es si el ordenador es de 8 ó 16k. Ya que, en efecto, tenemos el slot/subslot de la página3, tenemos ya el primer slot con memoria pero... ¿tenemos más? No lo sabemos, así que hacemos ya la primera comprobación "hard" y es buscar memoria en la zona de 0C000h en adelante. Usamos para ello la rutina <checkmemdirect>.
+
+
+<checkmemdirect> Clásica entre las clásicas. Y seguro que todo programador MSXero que lleve tiempo con la máquina alguna vez se ha encontrado con ella. La rutina hace lo siguiente: Lee un byte de una dirección, y lo complementa. El byte es guardado en otro registro. Seguidamente escribe el byte complementado en esa misma dirección y vuelve a leer el valor y lo almacena en otro registro. Por motivos de seguridad, vuelve a complementar el valor (dejándolo como estaba al principio) y lo vuelve a posicionar en la posición de memoria. Y por último la comprobación. Si el valor del primer registro que hemos guardado (el complementado después de leido) es igual al valor del segundo registro guardado (el que no ha sido complementado pero ha sido leido después de escrito complementado (vaya galimatías) ) es igual, significa que hemos podido modificar el valor de la posición de memoria. ¿Qué significa eso? Pues que estamos ante un byte que PUEDE ser de RAM. En caso contrario la rutina pone el Carry a 1 y regresa, es decir, indica error. Pero si esto no ocurre, decrementa el contador y repite la operación en la posición siguiente. En total comprueba 16 posiciones. ¿Suficiente? Pues si, hasta el momento de escribir estas líneas ha sido suficiente, es decir, desde 1983 hasta hoy con esto ha sobrado para comprobar y buscar memoria. 
+
+Si esta comprobación no nos da error ya nos encontramos ante un equipo con al menos 16k de RAM. En caso contrario la rutina llama a su fin, y nuestra búsqueda se da por concluida.
+
+"Pero si me dijiste al principio que podría ser que el ordenador tuviese 8k en un slot y una ampliación de memoria en otro, ¿por qué abandonas?" Pues porque, como también dije al principio, la BIOS *ya se ha encargado de posicionar en la página 3 el slot/subslot de la memoria más grande que ha encontrado*. Así que continuar es inútil. 
+
+Pero la rutina continúa si tenemos 16k detectadas. Tanto >searchramnormal00> como <searchramnormal40> como <searchramnormal80> realizan la misma operación, excepto que cada un busca memoria para página 0,1 y 2 respectivamente. Aquí se hace uso de otra rutina: <checkmem>
+
+<checkmem>: Esta rutina recorre todos los slots/subslots del MSX, haciendo uso de la megaarchiconocidayvenerada rutina SIGSLOT de mi maestro el gran KonamiMan. Como la rutina se sale del artículo no la vamos a comentar. Para cada slot/subslot dado por SIGSLOT llamamos a <checkmemgen>. Si <checkmemgen> devuelve el carry a 1, sigue buscando la rutina <checkmem> hasta que se finalizan todos los slots/subslots a buscar. Si encuentra memoria, es devuelva a la rutina que la llamo (<searchramnormalxx>) para que anote el slot/subslot donde encontró memoria. 
+
+<checkmemgen>: La rutina es *exactamente igual* a la ya explicada <checkmemdirect>. Igual, con una sola diferencia. Hace uso de las rutinas de la bios RDSLT y WRSLT para leer y escribir el valor que antes escribíamos y leíamos directamente. ¿Por qué? Pues porque no hemos posicionado el slot/subslot para poder leerlo. Y además, ni falta que nos hace. Ya tenemos esas rutinas BIOS que lo hacen por nosotros, ¿no?
+
+
+Y por fin, para terminar ya la rutina principal <searchramnormal> se hacen una serie de comprobaciones. Si ramtypus = RAM8K, pues nada, adios no había más. 
+
+Si ramcheck2 es diferente de 0, es que ha encontrado algo. Si no, pues fuera, es decir, tenemos 16k. Si hay algo, pues ya podemos asumir que tenemos 32k. Si ramcheck1 es igual a 0, no tenemos más, pero si no es que se encontró algo. De nuevo podemos decir que nuestro ordenador cuenta con al menos 48k de RAM. Algo, como ya hemos dicho raro o inexistente. Para finalizar, si ramcheck0 es igual a 0, pues acabamos de encontrar lo más raro del mundo, es decir, un ordenador de 48k. Pero como seguro que eso no es así, ya podemos decir que POR FIN tenemos nuestro ordenador con 64k. Misión cumplida.
+
+
+
+SEARCHRAMALL
+------------
+
+Esta segunda rutina lo que hace es buscar todos los slots/subslots que contienen memoria para cada página, excepto para la página 3, cosa que explicaremos más adelante.
+
+Las variables utilizadas en esta rutina son las siguientes:
+
+[rambuffer0,1,2,3]. Dado que sumando slots y subslots, la cantidad de los mismos máxima en MSX son 16, estas variables apuntan a un buffer de 16 bytes. En ellos iremos almacenando todos los slots/subslots que contengan memoria. 
+
+[ramcounter0,1,2,3]. Un byte por variable. Que guarda el número slots/subslots de memoria encontrados para cada página. 
+
+Poco más tiene esta rutina que no hayamos ya explicado. Hacemos uso de nuevo de SIGSLOT y vamos recorriendo todos. Almacenando cada slot/subslot encontrado e incrementado ramcounterx en uno cada vez que detectamos memoria.
+
+Esta rutina puede ser muy interesante para cualquier aplicación que necesite usar el máximo de memoria posible. 
+
+SEARCHRAMLINEAL
+---------------
+
+La última rutina hace lo que también hemos comentado ya. Busca en todo lo encontrado por <searchramall> una posible configuración de máxima RAM lineal. Quizás la rutina más enrevesada de todas. Es la rutina, lógicamente, más lenta pues tiene que recorrer todo lo encontrado y hacer muchas comprobaciones. No vamos a desmenuzar esta rutina y la dejamos como ejercicio para el lector. Seguro que existen otros métodos para conseguirlo mucho más rápidos, pero en este caso no es una rutina que requiera rapidez ya que se ejecutaría una sola vez al principio de nuestro programa.
+
+Los resultados son almacenados también en variables y nos indicarán lo siguiente:
+
+[ramlineal] Puede tomar 3 valores:
+
+	0 NORAML, es decir no hay Ram suficiente para cargar algo de 16k. 
+	1 RAML16K, podemos cargar algo de 16K.
+	2 RAML32K, podemos cargar algo de 32k.
+	3 RAML48K, podemos cargar algo de 48k.
+	
+	
+"¿Cómo? ¿Qué pasa con las cosas de 64k?" Vale, vale, tranquilidad. Repasemos otra vez la idea de la utilidad de esta rutina. Como comentamos al principio lo que aquí buscamos es la máxima cantidad de ram lineal (es decir, a ser posible de 0 a 0FFFFh) y que se encuentre en el mismo slot/subslot en todas las páginas.
+
+Si volvemos a la utilidad de ejemplo, para cargar algo de 16k de Ram, pues necesitamos tener 32k de Ram, mínimo. ¿Por qué? Pues porque entendemos que la pagina 3 es *intocable*. Los juegos en ROM contienen código (a excepcion de ROMS de 64k muy raros) en la página 3. Así pues, un juego de 32k de ROM, se ubica, normalmente en la zona 04000h-0BFFFh. Y la página 3 (0C000h-0FFFFh) es donde se ubican las variables del juego. Entonces, necesitaremos tener 48k de Ram en nuestro MSX por esa regla de 3. La pagina 3,2,1. Así que, en caso de tener 48k (el caso imposible y raro) pues la rutina devolverá en [ramlineal] un 2, es decir, que se nos permite cargar cosas de 32k. 
+
+El mismo caso, para cosas de 48k. Si queremos meter una ROM de 48k, pues necesitamos 64k, por fuerza. ¿Y para cargar cosas de 64k? Pues si, es posible, nada es imposible. Pero para eso necesitamos algo demasiado enrevesado. 4 slots/subslots lineales (un por página) mas un slot/subslot para la página 3 donde contengamos la memoria. Vamos, que esto pasa obligatoriamente por tener una memoria externa. Y es demasiado complejo de montar. Por fortuna no se prodigan los juegos de 64 K ROM no mapeados. 
+
+[ramlineal0,1,2] nos informarán del slot/subslot donde se encuentra esa ramlineal encontrada. 
+
+LA PAGINA 0 Y LA PAGINA 3
+--------------------------
+
+Como hemos visto en las rutinas, cuando hemos buscado la máxima memoria, hemos ignorado completamente la pagina 3. Esto tiene una explicación. Trabajando con la BIOS y el sistema MSX de "casa" (es decir no haciendo un sistema operativo propio que trabaje de otra manera), no tiene sentido cambiar la página 3 para nada. En ella se ubican todas las variables del sistema, muy necesarias para trabajar con la BIOS y el hecho de cambiarla, además de ser complejo, no ayudaría mucho por su complejidad a nuestro programa. Para cambiar la página 3 necesitariamos habilitar otra zona de memoria para tener la pila y variables. La pila normalmente se ubica en la página 3, que es donde está la memoria desde que arranca el MSX como hemos comentado. El hecho de cambiar esa página pasa obligatoriamente por mover la pila y almacenarla en otro sitio. No obstante, claro, se puede hacer. 
+
+Y luego la página 0. Esta si que es útil cambiarla. Pero tiene un problema. Así como para trabajar con la página 1 y 2 e ir cambiando el slot/subslot de las mismas podemos usar la rutina  ENASLT de la BIOS, para cambiar la página 0 esto no es posible, debido a que:
+
+[] El código de la rutina ENASLT se encuentra precisamente en esa página, la 0. Aunque la rutina se apoya en la página 3 (en una zona del sistema de variables) para hacer el cambio, es capaz la mayoría de las veces de posicionarte el slot/subslot de la página 0, pero *luego es imposible volver a poner la BIOS otra vez u otro slot/subslot con ENASLT*. Es obvio puesto que al cambiar la página 0, que es donde estaba el código de ENASLT pues ya no tenemos acceso a él. Esto es uno de los pequeños fallos del sistema, ya que lo correcto hubiese sido habilitar en otra página (la 3 era la indicada) una porcion de código que hiciese esta faena. Pero... no es posible tampoco. No es posible porque para cambiar un slot expandido es necesario poner el slot en la página 3, cosa que se sale de este artículo y explicaremos en el siguiente.
+
+[] ENASLT activa siempre las interrupciones. Lo cual es un peligro. Otro fallo del sistema. En lugar de habilitar una variable para que al salir de ENASLT activase o no la interrupciones según esa variable, por defecto las activa siempre. ¿Cuál es el problema? Pues que si cambiamos la página 0, estamos en IM1 (donde la interrupción salta a 038h) con ENASLT, se activan las interrupciones y se produce una interrupción y, NO tenemos preparado nada en 038H en el slot/subslot destino, lo que vamos a conseguir es un bonito cuelgue seguramente.
+
+Incluso las diskROMS de las cual hemos hablado mucho lo hacen a mano. Es decir, no usan ENASLT, y cuando arrancan el MSXDOS cambian esta página para poner la memoria a mano. Pero, como hemos dicho, esto queda ahora un poco fuera del artículo, y lo completaremos en el siguiente donde nos centraremos en estas dos problemáticas páginas y como poder cambiarlas sin morir en el intento.
+
+¿Y PARA QUE VALE ENTONCES TODO ESTO?
+-------------------------------------
+
+Pues para mucho. De momento ya podéis usar con toda libertad las rutinas y usar la RAM encontrada para páginas 1 y 2, mediante ENASLT. Desde luego es bastante, hasta el siguiente número.
+
+Pero como lo mejor es tener algo que demuestre su uso, aquí os dejo el link a una cosa que hace uso de todas estas rutinas, y que implementé para su prueba. Es un juego de cassette pasado a ROM, que necesita cualquier ordenador de 64k, esté como esté la memoria y funciona en cualquier caso. Adios pokes mágicos adios incompatibilidades.  Aquí tenéis la ROM junto con el código fuente del artículo, en dos versiones, para mapper ASCII8 y mapper KONAMI5.
+
+->LINK<-
+
+
+SOBRE MEMORY MAPPERS Y GESTORES DE MEMORIA
+-------------------------------------------
+
+Al principio del artículo hablamos de ellos y dijimos que no nos íbamos a centrar en esos asuntos por ahora. Hay mucha documentación de como trabajar con ellos, como averiguar su capacidad y como usar los gestores de memoria de MSXDOS2. Todo esto ha sido explicado varias veces por el maestro Konamiman, y creo que sobra repetirse. Aún así si tenéis cualquier duda ya sabéis donde encontrarme.
+
+
+NOTAS FINALES
+--------------
+
+Si habéis sido capaces de llegar hasta aquí, seguro que os habréis hecho las mismas preguntas que me hice yo en su día. ¿Por qué todo esto no lo hace el sistema operativo o la BIOS? Pues no lo se. Es otra de las lagunas del MSX. Creo que no les hubiese costado mucho, ya que obligatoriamente busca la BIOS memoria, apuntar en 4 bytes (4 variables del sistema) el resultado que nos da la rutina <searchramnormal>. Esto hubiese evitado MUCHOS, MUCHISIMOS problemas de compatibilidad en en standard. Todavía no me explico porqué lo hicieron así. 
+
+Lo que si espero es que toda esta explicación evite para siempre problemas de compatibilidad y despeje muchas dudas. A día de hoy, con toda la información en nuestra mano siguen apareciendo muchos programas incompatibles. Los slots/subslots y la memoria siguen siendo problemáticos para los nuevos programadores del sistema. Y ya no deberían de serlo. 
+
+Si queréis hacer pruebas de forma fácil, no es necesario que llenéis vuestra casa de MSXs. Con el emulador openMSX es sencillísimo "construirse" cualquier extraña configuración de MSX, poniendo la memoria como queramos. De hecho yo me configuré un MSX de 48k y el sistema funciona perfectamente. Si, he dicho mil veces que es raro, pero no imposible. De hecho, de nuevo la diskROM ya comprueba que realmente exista memoria en página 0 y 1 para arrancar MSXDOS. Si el sistema obligase a pasar de 32k a 64k, podrían evitarse esa comprobación y solo comprobar una de las dos páginas. Pero no, comprueban ambas lo cual quiere decir que el sismema permite este tipo de ordenador. 
+
+En fin, lo dicho, aquí me tenéis para lo que queráis. En el siguiente número profundizaremos en el tema de como cambiar la página 0 sin morir en el intento, y de paso, cómo construir ROMS de 48k que va directamente unido. 
+
+Hasta el próximo número!!!
+
+Armando Pérez (Ramones)
+e-mail : majingazetto@gmail.com
+Fidonet: 2:343/107.20
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

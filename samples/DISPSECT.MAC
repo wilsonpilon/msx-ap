@@ -1,0 +1,245 @@
+.z80
+
+;-------------------------------------------------------------------------;
+; Caracteres graficos para a borda do setor                               ;
+;-------------------------------------------------------------------------;
+BR_VERT EQU 016h
+BR_HORZ EQU 017h
+UP_LEFT EQU 018h
+UP_RGHT EQU 019h
+LO_LEFT EQU 01Ah
+LO_RGHT EQU 01Bh
+BR_TOPT EQU 012h
+BR_BTMT EQU 011h
+TOP_TCK EQU 012h
+BTM_TCK EQU 011h
+
+        PUBLIC SECTOR
+        PUBLIC DSP_HS
+        PUBLIC INI_DHS
+        EXTRN WRT_HEX
+        EXTRN WRT_HD
+        EXTRN WRT_CHR
+        EXTRN WRT_NT
+        EXTRN WRT_PTN
+        EXTRN SND_CR
+
+CSEG
+
+;-------------------------------------------------------------------------;
+; Esta rotina mostra uma linha superior decorativa, meio setor e uma      ;
+; linha decorativa inferior                                               ;
+;       DE: O deslocamento do setor em bytes, deve ser múltiplo de 16     ;
+;                                                                         ;
+;      Usa: DPS_HS, WRT_PRN                                               ;
+;       Le: TL_PTN, BL_PTN                                                ;
+;                                                                         ;
+;-------------------------------------------------------------------------;
+INI_DHS:
+        push de                         ;Salva os registradores
+        call DSP_TN                     ;Mostra os numeros superiores
+        ld de,TL_PTN                    ;Linha superior
+        call WRT_PTN                    ;Imprime padrao
+        call SND_CR                     ;Salta linha
+        ld de,0                         ;Comeca pelo inicio do setor
+        call DSP_HS                     ;Mostra o setor
+        ld de,BL_PTN                    ;Linha inferior
+        call WRT_PTN                    ;Imprime padrao
+        pop de                          ;Recupera os registradores
+        ret
+
+;-------------------------------------------------------------------------;
+; Esta rotina mostra uma linha com numeros na parte superior do display   ;
+;                                                                         ;
+;      Usa: WRT_NT, WRT_HEX, WRT_CHR, WRT_HD, SEN_CR                      ;
+;                                                                         ;
+;-------------------------------------------------------------------------;
+DSP_TN:
+        push af                         ;Salva os registradores
+        push bc
+        push de
+        push hl
+        ld d,' '                        ;Espacos em branco
+        ld b,9
+        call WRT_NT                     ;Imprime 9x
+
+        ld d,0                          ;Inicia em 0
+_DTNLOP:
+        push de                         ;Salva contador
+        call WRT_HEX                    ;Imprime digito
+        ld d,' '                        ;Espaco
+        call WRT_CHR                    ;Imprime
+        pop de                          ;Recupera contador
+        inc d                           ;Incrementa
+        ld a,d                          ;Compara
+        cp 10h                          ;Chegou a 16?
+        jp nz,_DTNLOP                   ;Nao, continua
+
+        ld d,' '                        ;Espaco separa HEX de ASCII
+        ld b,2
+        call WRT_NT                     ;Imprime 2x
+        
+        ld d,0                          ;Inicia em 0
+_DTNLO2:
+        push de                         ;Salva contador
+        call WRT_HD                     ;Imprime digito
+        pop de
+        inc d                           ;Incrementa
+        ld a,d                          ;Compara
+        cp 10h                          ;Chegou a 16?
+        jp nz,_DTNLO2                   ;Nao, continua
+        
+        call SND_CR                     ;Salta linha
+        pop hl                          ;Recupera registradores
+        pop de
+        pop bc
+        pop af
+        ret
+
+;-------------------------------------------------------------------------;
+; Esta rotina mostra meio setor de um disco (256 bytes)                   ;
+;                                                                         ;
+;       DE: O deslocamento do setor em bytes, deve ser múltiplo de 16     ;
+;                                                                         ;
+;      Usa: DPS_LN, SND_CR                                                ;
+;                                                                         ;
+;-------------------------------------------------------------------------;
+DSP_HS:
+        push af                         ;Salva os registradores
+        push bc
+        push de
+        push hl
+        ld b,16                         ;Mostra 16 linhas
+HSLOP:
+        call DSP_LN                     ;Mostra uma linha
+        call SND_CR                     ;Salta linha
+        ld h,d                          ;Desloca 16 bytes (soma)
+        ld l,e
+        ld de,16
+        add hl,de
+        ld d,h
+        ld e,l
+        djnz HSLOP
+        pop hl                         ;Recupera os registradores
+        pop de
+        pop bc
+        pop af
+        ret                            ;Encerra
+
+
+;-------------------------------------------------------------------------;
+; Esta rotina mostra uma linha de dados, ou 16 bytes, primeiro em hexa    ;
+; e depois em ASCII                                                       ;
+;                                                                         ;
+;       DE: O deslocamento do setor                                       ;
+;                                                                         ;
+;      Usa: DPS_LN, SND_CR, WRT_NT                                        ;
+;                                                                         ;
+;-------------------------------------------------------------------------;
+DSP_LN:
+        push af                         ;Salva registradores
+        push bc
+        push de
+        push hl
+
+        push de                         ;Salva o deslocamento
+        ld b,3                          ;Imprime 3 caracteres
+        ld d,' '                        ;espaco
+        call WRT_NT
+        pop de                          ;recupera o deslocamento
+        
+        push de                         ;Salva registro usado
+        ld a,d                          ;Verifica se DE e maior que 255
+        ld d,'0'                        ;Prepara impressao de endereco
+        cp 0
+        jp z,LN_0                       ;Se sim imprime '0'
+        ld d,'1'                        ;Se nao imprime '1'
+LN_0:
+        call WRT_CHR                    ;Imprime primeiro digito
+        pop de                          ;Recupera DE
+        push de                         ;Salva DE
+        ld d,e
+        call WRT_HEX                    ;Imprime segundo digito
+        
+        ld d,' '                        ;Separador
+        call WRT_CHR
+        ld d,BR_VERT                    ;Desenha o lado da borda
+        call WRT_CHR
+        ld d,' '
+        call WRT_CHR
+        pop de                          ;Recupera registro
+
+        push de                         ;Salva deslocamento
+        ld b,16                         ;Quantidade de bytes para DUMP
+        ld hl,SECTOR                    ;Onde os bytes se encontram
+        add hl,de
+HLOP:
+        ld d,(hl)                       ;Pega um valor do endereco corrente
+        call WRT_HEX                    ;Imprime em hexa
+        ld d,' '                        ;Espaco
+        call WRT_CHR                    ;Imprime espaco
+        inc hl                          ;Passa para o proximo byte
+        djnz HLOP                       ;Laco para os 16 bytes
+
+        ld d,BR_VERT                    ;Desenha o meio da borda
+        call WRT_CHR
+        ld d,' '
+        call WRT_CHR
+
+        pop de                          ;Recupera deslocamento
+        ld b,16                         ;Quantidade de bytes para DUMP
+        ld hl,SECTOR                    ;Onde os bytes se encontram
+        add hl,de
+ALOP:
+        ld d,(hl)                       ;Pega um valor do endereco corrente
+        call WRT_CHR                    ;Imprime o caractere correspondente
+        inc hl                          ;Passa para o proximo byte
+        djnz ALOP                       ;Laco para os 16 bytes
+        
+        push de                         ;Salva registro usado
+        ld d,' '                        ;Desenha o outro lado da borda
+        call WRT_CHR
+        ld d,BR_VERT
+        call WRT_CHR
+        pop de                          ;Recupera registro usado
+        
+        pop hl                          ;Restaura registradores
+        pop de
+        pop bc
+        pop af
+        ret                             ;Retorna
+
+DSEG
+SECTOR:
+        ds 521                          ;Dados do setor (512 bytes)
+
+TL_PTN:
+        DB ' ',7                        ;Padrao da Linha Superior
+        DB UP_LEFT,1
+        DB BR_HORZ,12
+        DB TOP_TCK,1
+        DB BR_HORZ,11
+        DB TOP_TCK,1
+        DB BR_HORZ,11
+        DB TOP_TCK,1
+        DB BR_HORZ,12
+        DB BR_TOPT,1
+        DB BR_HORZ,18
+        DB UP_RGHT,1
+        DB 0
+BL_PTN:
+        DB ' ',7                        ;Padrao da Linha Inferior
+        DB LO_LEFT,1
+        DB BR_HORZ,12
+        DB BTM_TCK,1
+        DB BR_HORZ,11
+        DB BTM_TCK,1
+        DB BR_HORZ,11
+        DB BTM_TCK,1
+        DB BR_HORZ,12
+        DB BR_BTMT,1
+        DB BR_HORZ,18
+        DB LO_RGHT,1
+        DB 0
+
+END

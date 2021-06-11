@@ -1,0 +1,6 @@
+TASM Z80 Assembler.       Version 3.2b  Feb, 2000.
+ Copyright (C) 2000 Squak Valley Software
+tasm: pass 1 complete.
+ line 1170: No END directive before EOF.       
+tasm: pass 2 complete.
+tasm: Number of errors = 1

@@ -1,0 +1,316 @@
+pusha
+P&ush all registers
+	push af
+	push bc
+	push de
+	push hl
+
+	|
+.TEMPLATE END
+popa
+P&op all registers
+	pop hl
+	pop de
+	pop bc
+	pop af
+
+	|
+.TEMPLATE END
+DoCopy
+Global &copy routine
+	|
+DoCopy:
+; routine : copy VRAM -> VRAM
+; in      : HL - pointer to 15 bytes large data block
+; out     : none
+; cmnt    : none
+
+	di
+
+	StatReg(2)
+
+CopyChkCE:
+	in a,($99)
+	rra
+	jr c,CopyChkCe
+
+	StatReg(0)
+
+	ld a,32
+	vdp(17)
+
+	ld bc,$0f9b
+	otir	
+
+	ei
+
+	ret
+.TEMPLATE END
+hr
+&Horizontal Retrace
+	in a,($99)							; Check on Horizontal retrace
+	and $20							;
+	jr z,$-4							;
+
+	|
+.TEMPLATE END
+vr
+&Vertical retrace
+	in a,($99)							; Check on Vertical retrace
+	and $40							;
+	jr nz,$-4							;
+
+	|
+.TEMPLATE END
+cd
+Copy &data
+|:
+	.db 0					; source x
+	.db 0					; source x - extra bit for screen 7
+
+	.db 0					; source y
+	.db 0					; source page
+
+	.db 0					; destination x
+	.db 0					; destination x - extra bit for screen 7
+
+	.db 0					; destination y
+	.db 0					; destination page
+
+	.db 0					; length x
+	.db 0					; length x - extra bit for screen 7 (and scr, 5 - 256 pxls.)
+
+	.db 0					; length y
+	.db 0					; length y - extra bit for screen 5 - 256 pxls.
+
+	.db 0					; color
+	.db 0					; other settings (see vdp)
+
+	.db 0					; high: command, low: logic operation
+.TEMPLATE END
+hinta
+Hook interrupt $FD9&A
+	ld hl,$fd9a
+	ld de,OldInt
+	ld bc,5
+	ldir
+
+	ld a,$c9
+	ld ($fd9a),a
+
+	ld hl,NewInt
+	ld ($fd9a+1),hl
+
+	ld a,$c3
+	ld ($fd9a),a
+
+	|
+.TEMPLATE END
+uinta
+Unhook interrupt $FD9A
+	ld a,$c9
+	ld ($fd9a),a
+
+	ld hl,OldInt+4
+	ld de,$fd9a+4
+	ld bc,5
+	lddr
+
+	|
+.TEMPLATE END
+hintf
+Hook interrupt $FD9&F
+	ld hl,$fd9f
+	ld de,OldInt
+	ld bc,5
+	ldir
+
+	ld a,$c9
+	ld ($fd9f),a
+
+	ld hl,NewInt
+	ld ($fd9f+1),hl
+
+	ld a,$c3
+	ld ($fd9f),a
+
+	|
+.TEMPLATE END
+uintf
+Unhook interrupt $FD9F
+	ld a,$c9
+	ld ($fd9f),a
+
+	ld hl,OldInt+4
+	ld de,$fd9f+4
+	ld bc,5
+	lddr
+
+	|
+.TEMPLATE END
+d-fader
+&Fade from palette to palette
+	|
+d_fader:
+; routine : The fader... (aka. d-fader)
+; in      : DE - Palette to fade from, HL - Palette to fade to.
+; out     : none.
+; cmnt    : none.
+
+	push hl
+
+	ex de,hl
+
+	ld de,DataPalette
+	ld bc,32
+	ldir
+
+	pop hl
+
+	ld b,8
+d_fader.2:
+	push bc
+	push hl
+
+	ld de,DataPalette
+
+	ld b,16
+d_fader.1:
+	push bc
+
+	ld a,(de)					; $00
+	srl a	
+	srl a
+	srl a
+	srl a
+	ld b,a					; $00
+
+	ld a,(hl)					; $77
+	srl a
+	srl a
+	srl a
+	srl a						; $07
+
+	cp b						; nc
+	jp z,d_fader.NoChange1
+
+	jp c,d_fader.Decrease1
+
+	inc b
+	inc b
+d_fader.Decrease1:
+	dec b
+	
+d_fader.NoChange1:
+	ld a,(de)
+	and $0f
+
+	ld c,a
+
+	ld a,(hl)
+	and $0f
+
+	cp c
+	jp z,d_fader.NoChange2
+
+	jp c,d_fader.Decrease2
+
+	inc c
+	inc c
+d_fader.Decrease2:
+	dec c
+d_fader.NoChange2:
+	ld a,b
+	sla a
+	sla a
+	sla a
+	sla a
+	or c
+
+	ld (de),a
+
+	inc de
+	inc hl
+
+	ld a,(de)
+	ld b,a
+	ld a,(hl)
+	cp b
+	jp z,d_fader.NoChange3
+
+	jp c,d_fader.Decrease3
+
+	inc b
+	inc b
+d_fader.Decrease3:
+	dec b
+
+d_fader.NoChange3:
+	ld a,b
+	ld (de),a
+
+	inc de
+	inc hl
+
+	pop bc
+
+	djnz d_fader.1
+
+	SetPalette(DataPalette)
+
+	ei
+	halt
+	halt
+
+	pop hl
+	pop bc
+
+	djnz d_fader.2
+
+	ret
+
+
+DataPalette:
+	.ds 16*2
+
+BlackPalette:
+	.dw $0000,$0000,$0000,$0000,$0000,$0000,$0000,$0000
+	.dw $0000,$0000,$0000,$0000,$0000,$0000,$0000,$0000
+.TEMPLATE END
+DoReplay
+Do &replay (blaffer NT routine)
+	|
+
+doReplay:
+	in a,($fd)
+	push af
+
+	in a,($fe)
+	push af
+
+	ld a,RomBank
+	out ($fd),a
+
+	ld a,($f342)
+	ld (Replay.Slot),a
+
+	rst 30h
+Replay.slot:
+	.db 0
+	.dw bntReplay
+
+	pop af
+	out ($fe),a
+
+	pop af
+	out ($fd),a
+
+	ret
+.TEMPLATE END
+rex
+Routine &Explanation
+; routine : |
+; in      : 
+; out     : 
+; cmnt    :
+.TEMPLATE END

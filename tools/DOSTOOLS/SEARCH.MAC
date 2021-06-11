@@ -1,0 +1,82 @@
+	.z80
+
+MSXDOS  equ     0F37Dh          ;MSX-DOS entry point under Disk-BASIC
+
+start::
+	cp      3               ;string variable?
+	jr      nz,user_error   ;no, error
+
+	push    de              ;save string descriptor
+	ld      a,(de)          ;get string size
+	or      a               ;is size zero?
+	jr      z,search_next   ;yes, this is "search next"
+
+search_first:
+	ld      bc,1+8+3        ;set size for DRIVE+NAME+TYPE
+	cp      c               ;is size valid?
+	jr      nz,user_error   ;no, error
+
+	ex      de,hl           ;copy passed string to our work
+	inc     hl
+	ld      e,(hl)
+	inc     hl
+	ld      d,(hl)
+	ex      de,hl
+	ld      de,my_fcb
+	ldir
+	ld      c,11h           ;MSX-DOS function code "search first"
+	jr      do_search
+
+search_next:
+	ld      c,12h           ;MSX-DOS function code "search next"
+
+do_search:
+	push    bc              ;save search function code
+
+	ld      de,my_directory
+	ld      c,1Ah           ;MSX-DOS function code "set DMA address"
+	call    MSXDOS
+
+	ld      de,my_fcb
+	pop     bc              ;restore search function code
+	call    MSXDOS
+
+	inc     a               ;A=FFh when no more files
+	jr      z,return_string ;return
+
+	ld      a,1+3+8
+return_string:
+	pop     hl              ;restore string descriptor
+	ld      de,my_directory
+	ld      (hl),a          ;set new string length
+	inc     hl
+	ld      (hl),e          ;set new string pointer
+	inc     hl
+	ld      (hl),d
+	ret
+
+user_error:
+	ld      de,message
+	ld      c,09h           ;MSX-DOS function code "string output"
+	call    MSXDOS
+
+	ld      c,00h           ;MSX-DOS function code "system reset"
+	jp      MSXDOS
+
+
+my_fcb:         ; 33 bytes
+	defb    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	defb    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	defb    0
+
+my_directory:   ; 33 bytes
+	defb    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	defb    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	defb    0
+
+message:
+	defb    0Dh,0Ah,"Bad search argument",0Dh,0Ah,07h,"$"
+
+	end
+fb    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	defb    0

@@ -1,0 +1,46 @@
+## ***** DESKTOP, pinta a Area de Desktop Inicial ****************************
+## * Usa a rotina em Assembly SCRNIV / USR(0)
+## * Colca o VDP em SCREEN 2 e o sistema em SCREEN 1, fazendo o modo
+## * mixado entre a SCREEN 1 e 2, permitindo 16 cores por caractere nas
+## * caracteristicas da SCREEN 1 em modo texto e nao grafico
+## *
+## * Usa a rotina em Assembly CPALPH / USR(1)
+## * Chama a SCREEN 2 para preparar as tabelas na VRAM. Em seguida faz o
+## * mesmo com a SCREEN 1. Depois chama a rotina SETGRP da BIOS. Esta
+## * rotina muda o VDP para operar no formato da SCREEN 1, porem deixando
+## * o BASIC em SCREEN 1. Para funcionar corretamente precisa que se copie
+## * o banco de caracteres para os 3 tercos da tela, a partir disso, opera
+## * como SCREEN 1
+## *
+## * Usa rotina em Assembly DSKTOP / USR(2)
+## * E apenas uma chamada a FILVRM com o caractere 0, que e o padrao de
+## * preenchimento no alfabeto
+## *
+## * Usa a rotina em Assembly FBLOK / USR(4)
+## * Preenche um bloco nao contiguo na VRAM com um caractere
+define [blkx][poke &Hc000,[0]]
+define [blky][poke &Hc001,[0]]
+define [blkw][poke &Hc002,[0]]
+define [blkh][poke &Hc003,[0]]
+define [blkc][poke &Hc004,[0]]
+define [slen][poke &hc005,[0]]
+
+define [SCRNIV][temp=usr(0)]
+define [CPALPH][temp=usr(1)]
+define [DSKTOP][temp=usr(2)]
+define [COLORS][temp=usr(3)]
+define [FBLOK][temp=usr(4)]
+define [WINDS][temp$=usr3([0])]
+
+
+
+{desktop}
+    [SCRNIV]:
+    [CPALPH]:
+    [blkc]&H00:[DSKTOP]:
+    [COLORS]:
+    [blkx]1:[blky]2:[blkw]11:[blkh]20:[blkc]32:[FBLOK]:
+    [blkx]13:[blky]2:[blkw]18:[blkh]20:[blkc]32:[FBLOK]
+    [blkx]1:[blky]2:[blkw]11:[blkh]20:[blkc]32:[WINDS]"Menu":
+    [blkx]13:[blky]2:[blkw]18:[blkh]20:[blkc]32:[WINDS]"Info":
+    return

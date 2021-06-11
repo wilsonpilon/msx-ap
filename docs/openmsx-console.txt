@@ -1,0 +1,1691 @@
+openMSX Console Command Reference
+INTRODUCTION
+COMMANDS
+after bind / unbind / bind_default / unbind_default / activate_input_layer / deactivate_input_layer cart / cart<x> cassetteplayer cd<x> cycle / cycle_back debug disk<x> / virtual_drive diskmanipulator escape_grab exit ext / ext<x> filepool findcheat hd<x> help incr iomap keymatrixdown / keymatrixup laserdiscplayer list_extensions load_icons load_settings machine create_machine / load_machine / activate_machine / list_machines / delete_machine machine_info message monitor_type mute_channels / unmute_channels / solo nowind<x> openmsx_info openmsx_update osd palette plug / unplug psg_profile record record_channels remove_extension reset reverse save_settings savestate / loadstate / list_savestates / delete_savestate screenshot set slotmap slotselect soundlog store_machine / restore_machine test_machine toggle trainer type / type_via_keyboard unset user_setting vdpregs other
+SETTINGS
+accuracy audio-inputfilename autoruncassettes autorunlaserdisc auto_enable_reverse auto_save_replay blur bootsector brightness cmdtiming color_matrix console consolebackground consolecolumns consolefont consolefontsize console_history_size consoleplacement consolerows console_remove_doubles contrast cputrace debugoutput default_machine deflicker deinterlace DirAsDSKmode disablesprites display_deform di_halt_callback enable_session_management frequency firmwareswitch fullscreen fullspeedwhenloading gamma glow grabinput horizontal_stretch inputdelay interleave_black_frame invalid_psg_directions_callback joystick<n>_config joystick<n>_deadzone kbd_auto_toggle_code_kana_lock kbd_code_kana_host_key kbd_deadkey1_host_key kbd_deadkey2_host_key kbd_deadkey3_host_key kbd_mapping_mode kbd_numkeypad_always_enabled kbd_numkeypad_enter_key kbd_trace_key_presses keyjoystick<n>.<button> led_<name> limitsprites master_volume maxframeskip midi-in-readfilename midi-out-logfilename minframeskip mode mute noise pause pause_on_lost_focus pointer_hide_delay power printerlogfilename print-resolution r800_freq / r800_freq_locked renderer renshaturbo resampler rs232-inputfilename rs232-outputfilename rtcmode samples save_settings_on_exit scale_algorithm scale_factor scanline sound_driver speed <soundchip>_balance <soundchip>_ch<channel>_record <soundchip>_ch<channel>_mute <soundchip>_detune_frequency <soundchip>_detune_percent <soundchip>_vibrato_frequency <soundchip>_vibrato_percent <soundchip>_volume throttle too_fast_vram_access too_fast_vram_access_callback touchpad_transform_matrix turborpause umr_callback vdpcmdinprogress_callback vdpcmdtrace videosource v9990cmdtrace z80_freq / z80_freq_locked other
+Introduction
+This manual describes all commands and settings which are available in openMSX. You can use them to control openMSX fully from the Console (a built in command line interface, use F10 to call it), via Tcl scripts and via remote connections (explained in Controlling openMSX from External Applications). If you want to unleash the full potential of openMSX or just want a reference of all available possibilities, this manual should serve you well.
+
+Commands
+after
+Execute a command after a certain event occurs, for example a given amount of time has passed or the emulator has been idle for a given amount of time. Every postponed command executes just once; if you want a command to run periodically, you have to issue it again every time it runs. The after command returns the id of the postponed command. It is possible to query a list of postponed commands and also to cancel postponed commands.
+
+usage:
+after time <seconds> <command>	Execute a command after some time. Timescale is in MSX seconds.
+after realtime <seconds> <command>	Execute a command after some time. Timescale is in host seconds.
+after idle <seconds> <command>	Execute a command after some time being idle
+after frame <command>	Execute a command when a video frame is finished (VDP scanning reaches vsync)
+after break <command>	Execute a command after a breakpoint is reached
+after boot <command>	Execute a command after a (re)boot
+after machine_switch <command>	Execute a command after switch to new a machine
+after <input-event> <command>	Execute a command after the given input event occurs. The events are e.g. mouse, joystick, focus and resize events, the same ones as for the bind command.
+after info	List all postponed commands
+after cancel <id>	Cancel the postponed command with given id
+examples:
+after time 2.6 "set renderer SDLGL-PP"
+after idle 100 exit
+after info
+after cancel after#2
+after "mouse button1 down" foo
+bind / unbind / bind_default / unbind_default / activate_input_layer / deactivate_input_layer
+Associate events (such as key presses) with commands. Whenever the specified event occurs (e.g. you press the specified key), the corresponding command will be executed. Any Tcl command or combination of commands separated with ; (normal Tcl syntax) can be used. To customize your bindings you should use the (un)bind commands. A script that wants to provide a default binding for its functionality needs to use bind_default, this allows users with different preferences to overrule the default bindings. Using the -repeat option makes sure that if the event is repeated (e.g. keyboard events when keeping a key pressed), the command is repeated as well.
+
+Tcl scripts that need a whole set of bindings and only conditionally activate those bindings can use the 'input layer' system. It's possible to associate a binding with a specific layer and later specific layer(s) can be activated or deactivated. Such a layer can also be activated in a blocking mode. Blocking mode means that even if the layer didn't have a binding for a certain event, that event is still not passed to the emulated MSX. This can be useful to implement certain OSD widgets (like a virtual OSD keyboard).
+
+Events can be:
+
+<key>[,release]	Short for keyb <key>[,release]
+keyb <key>[,release]	<key> is pressed [or released]
+mouse button<n> <up/down>	Mouse button <n> went up or down
+mouse motion <x> <y>	Mouse motion of <x> and <y>
+joy<n> button<m> <up/down>	Button <m> of joystick <n> went up/down
+joy<n> axis<m> <value>	Axis <m> of joystick <n> got value <value>
+focus <boolean>	The openMSX window got (1) or lost (0) focus
+OSDcontrol <button> PRESS|RELEASE	The virtual OSDcontrol <button> got pressed or released.
+usage:
+bind	Show all bindings
+bind -layer <layername>	Show all in a specific layer
+bind <event> [-layer <layername>]	Show binding for the given event, optionally you can specify a layer
+bind <event> [-layer <layername>] [-repeat] <command>	Make a new binding. Optionally make this binding in a specific layer. Also optionally it's possible to retrigger this binding periodically (e.g. when a key is kept pressed).
+bind -layers	Show the names of all layers that currently have bindings
+unbind [-layer <layername>] <event>	Undo binding for this event (optionally in a specific layer).
+unbind -layer <layername>	Undo all bindings in the specified layer
+activate_input_layer	Show a list of the currently active layers.
+activate_input_layer [-blocking] <layername>	Activate the specified input layer, optionally this layer can be activate in blocking mode.
+deactivate_input_layer <layername>	Deactivate the specified input layer.
+examples:
+bind PAGEUP "set speed 100"
+bind PAGEDOWN "set speed 50"
+
+Only run with full throttle while F9 is pressed (like BrMSX):
+unbind F9
+bind F9 "set throttle off"
+bind F9,release "set throttle on"
+
+Pause when window loses focus (like fMSX):
+bind "focus 0" "set pause on"
+bind "focus 1" "set pause off"
+
+Middle-click to toggle input grabbing:
+bind "mouse button2 down" "toggle grabinput"
+
+Map button 8 of joystick 1 to F2-key:
+bind "joy1 button8 down" "keymatrixdown 6 0x40"
+bind "joy1 button8 up" "keymatrixup 6 0x40"
+
+Use PageUp/Down to increase/decrease emulation speed.
+bind PAGEUP -repeat "incr speed 1"
+bind PAGEDOWN -repeat "incr speed -1"
+
+Use Joystick hat left/right to increase/decrease volume.
+bind "joy1 hat0 left" -repeat "incr speed -5"
+bind "joy1 hat0 right" -repeat "incr speed 5"
+
+Toggle fullscreen with ALT and ENTER.
+bind ALT+RETURN toggle fullscreen
+
+React to joystick or cursor up movement in a Tcl script:
+bind_default "OSDcontrol UP PRESS" -repeat {osd_menu::menu_action UP }
+React to joystick button 1 or spacebar press in a Tcl script:
+bind_default "OSDcontrol A PRESS" -repeat {osd_menu::menu_action A }
+cart / cart<x>
+Insert a ROM cartridge in a running MSX. The cart command inserts the cartridge in the first available slot. The carta, cartb etc. commands insert it in the specified slot. The cartridges can be removed again with the eject subcommand.
+
+ROM cartridges are a special class of extensions. For extensions that are not ROM cartridges, see the commands ext, list_extensions and remove_extension.
+
+usage:
+cart KMARE.ROM	Insert ROM cartridge in first free slot
+cart insert KMARE.ROM	Insert ROM cartridge in first free slot
+carta USAS.ROM -ips USAS.IPS	Insert ROM cartridge in slot A, with IPS patch applied to the ROM contents
+cartb NEMESIS.ROM -romtype Konami	Insert ROM cartridge in slot B, and explicitly specify the mapper type (is normally auto detected)
+carta eject	Eject the currently inserted cartridge from slot A
+cassetteplayer
+Controls the openMSX cassette player. The various subcommands can be used to insert, remove, create and rewind tape images.
+
+usage:
+cassetteplayer insert <tape image>	Insert tape image (WAV or CAS format) in the cassette player
+cassetteplayer eject	Remove tape from virtual cassette player
+cassetteplayer rewind	Rewind the current tape
+cassetteplayer motorcontrol on|off	Selects whether motor control signal (remote) is obeyed (default: on)
+cassetteplayer new [<tape image>]	Create new tape image and go to record mode
+cassetteplayer play	Go to play mode (when in record mode) and rewind the tape
+cd<x>
+Change the CDROM image. The commands cda, cdb etc. are assigned to all available CDROM drives in the MSX. They will not correspond to drive names as used in MSX-DOS.
+
+usage:
+cda <iso image>	Use ISO image for CDROM drive "cda"
+cda insert <iso image>	Use ISO image for CDROM drive "cda"
+cda eject	Eject CDROM from CDROM drive "cda"
+cda	Show current ISO image for CDROM drive "cda"
+cycle / cycle_back
+Iterates through the values of an enumerated setting.
+
+cycle_back does the same as cycle, but it goes in the opposite direction.
+
+usage:
+cycle <setting>	Changes the specified setting to the next value in the cycle
+cycle_back <setting>	Changes the specified setting to the previous value in the cycle
+examples:
+cycle scale_algorithm
+cycle videosource
+debug
+This command provides access to the debugger functionality of openMSX. It's meant to be used by an external debugger (see also Controlling openMSX from External Applications). The general format of the debug command is:
+
+debug <subcommand> [<extra arguments>]
+
+where 'extra arguments' are specific for each subcommand. Below is a list of all subcommands:
+
+debug list	Return a list of all debuggables.
+A debuggable is (part of) the state of a MSX device that can be accessed via these debug commands.
+Examples are:
+the VDP registers
+the currently visible memory for the Z80
+the contents of the RAM
+debug desc <name>	Return a description of this debuggable
+debug size <name>	Return the size of this debuggable
+debug read <name> <addr>	Read a byte from a debuggable
+debug write <name> <addr> <val>	Write a byte to a debuggable
+debug read_block <name> <addr> <size>	Read a whole block at once
+debug write_block <name> <addr> <values>	Write a whole block at once
+debug probe <subcommand>	See below.
+debug break	Break CPU at current position
+debug breaked	Query CPU break status
+debug cont	Continue execution after break
+debug step	Execute one instruction
+debug list_bp	List the active breakpoints
+debug set_bp <addr> [<cond>] [<cmd>]	Insert a new breakpoint at the given address. Optionally you can specify a condition and a command. When the CPU is about to execute the instruction at the given address, the condition will be evaluated, if this evaluates to true then the command is executed. The condition can be any Tcl expression and the command can be any Tcl command. The default condition is 'true' and the default command is "debug break".
+debug remove_bp <id>	Remove a certain breakpoint
+debug list_watchpoints	List all defined watchpoints
+debug set_watchpoint <type> <region> [<cond>] [<cmd>]	Insert a new watchpoint. When the CPU is about to read or write to/from the specified memory or I/O region, the condition is evaluated. If the condition evaluated to true, the command is executed. The condition and the command are similar to the ones in the set_bp subcommand. A watchpoint can either be set on a single memory address or I/O port (specify a single value), or on a whole memory or I/O port range (specify a begin/end pair). For example: debug set_watchpoint write_mem {0x8000 0x8FFF}. During the execution of <cmd>, the following global Tcl variables are set: ::wp_last_address, which is the actual address of the mem/io read/write that triggered the watchpoint and ::wp_last_value, the actual value that was written by the mem/io write that triggered the watchpoint.
+debug remove_watchpoint <id>	Remove a certain watchpoint
+debug list_conditions	List the active conditions
+debug set_condition <cond> [<cmd>]	Set a new debugger condition. Conditions are like breakpoints, but not tied to a specific address. Simulation is much slower when conditions are used (though generally while debugging this is not a problem).
+debug remove_condition <id>	Remove a certain condition
+debug disasm [<addr>]	Disassemble instructions at PC or given address
+The probe subcommand again has subcommands:
+
+debug probe list	Returns a list of all probes.
+debug probe desc <probe>	Returns a description of this probe.
+debug probe read <probe>	Returns the current value of a probe. But note that not all probes have a value
+debug probe set_bp <probe> [<cond>] [<cmd>]	Set a breakpoint on a probe. Like in the 'set_bp' subcommand you can optionally specify a condition and a command.
+debug probe remove_bp <id>	Remove the given breakpoint.
+debug probe list_bp	List the active breakpoints set on probes.
+At first sight 'probes' and 'debuggables' are very similar. Though there are some important differences and that's why probes and debuggables use different subcommands:
+
+A debuggable is an array of bytes.	A probe is a single value and can have any type.
+A debuggable is readable and (usually) writable.	A probe is always read-only.
+It's not possible to set breakpoints on a debuggable.	You can set breakpoints on a probe (and sometimes this is the only purpose of a probe).
+Many examples of usage of the debug command can be found in the scripts that come with openMSX (in the share/scripts directory). We also list a few here.
+
+examples:
+break (only!) after 0 is written to 0x8000):
+debug set_watchpoint write_mem 0x8000 {[debug read "memory" 0x8000] == 0x00}
+break on address 0xF37D, but only when Z80 register C has the value 0x2F:
+debug set_bp 0xF37D {[reg C] == 0x2F}
+break when CPU reads from any addresses between 0xFBE5 and 0xFBEF:
+debug set_watchpoint read_mem {0xFBE5 0xFBEF}
+break after a write was done to I/O port 0x99, but only when Z80 register A has a value of 0x81:
+debug set_watchpoint write_io 0x99 {[reg A] == 0x81}
+break as soon as there is a pending Z80 IRQ (even when in DI mode):
+debug probe set_bp z80.pendingIRQ
+break when register HL has the value 1234:
+debug set_condition {[reg hl] == 1234}
+Note: Some of the commands are pretty low level. In the share/scripts directory you'll find some Tcl scripts that offer convenience wrappers around these commands. For example: showmem, disasm, cpuregs, save_debuggable, etc.
+disk<x> / virtual_drive
+Insert a disk image in a drive. Optionally apply an IPS patch to the disk image. The commands diska, diskb etc. are assigned to all available "physical" disk drives in the MSX. They might not correspond to drive names as used in MSX-DOS.
+
+In addition to the physical disk<x> drives, there is the virtual_drive. This fake drive does not correspond to any MSX hardware. It can be used as a source or target for diskmanipulator operations just like physical drives.
+
+usage:
+diska <disk image>	Insert disk image in drive "diska"
+diskb insert <disk image>	Insert disk image in drive "diskb"
+diska <disk image> <ips>	Insert disk image and apply IPS patch
+diska eject	Remove disk from drive "diska"
+diska ramdsk	Insert scratch disk in drive "diska"
+diskmanipulator
+A collection of commands to manipulate (the files on) a disk image.
+
+It can be used in so many different ways, that we wrote a separate manual for it: Using Diskmanipulator.
+
+escape_grab
+Only has effect in windowed mode and when the grabinput setting is active. Temporarily release the input grab. After the openMSX window has lost and regained the focus, the grab is again effective.
+
+usage:
+escape_grab	Temporarily release the input grab
+exit
+Terminate the openMSX application.
+
+usage:
+exit	Exits the emulator
+ext / ext<x>
+Insert an MSX extension in a running MSX machine. The ext command inserts the extension in the first available slot. The exta, extb etc. commands insert it in the specified slot. The extension can be removed again with the remove_extension command. See also the commands cart, list_extensions and remove_extension.
+
+To get a list of possible extensions it's convenient to use the tab-completetion feature, i.e. type 'ext<space><tab>'. Alternatively the command 'openmsx_info extensions' gives you the same information (and is easier to use in a scripting context).
+
+Note that some extensions (i.e. those without any memory) will not physically occupy any slot when inserted, even when they were inserted in a specific slot.
+
+usage:
+ext fmpac	Insert an FMPAC in a running MSX machine in the first free slot
+extb scc	Insert the empty SCC cart in slot B of the running MSX machine
+filepool
+With this command you can manage your file pool settings. File pools are directories on your host system (PC/Mac/Dingoo/etc.). They are used by openMSX to search files in, which are referred to from machine or extension definition files, save states or replays which you are trying to load. First, the file will be searched at the path that was also used when the save state or replay was created. But if it isn't found there (which is usually the case if you load such a state or replay you got from someone else), it will use the file pools to search instead. In other words, if you are trying to load such replays, it's probably a good idea to put the media files referred to (ROMs, disks, tapes) in the (proper) filepool.
+
+File pools have the following properties:
+
+path
+The path to the directory which is the actual file pool
+position
+There exists a list of file pools, which are searched in order of their position.
+type(s)
+A file pool can serve specific types. Currently, the valid types are
+system_rom
+for system ROMs, you are probably using this one already if you installed your system ROMs in the recommended place share/systemroms,
+rom
+for other ROM files,
+disk
+for disk images and
+tape
+for cassette/tape images.
+Apart from the default system ROM file pool as mentioned above, the other default file pool is share/software, which is configured for all other (than type system_rom) software files.
+
+usage:
+filepool list	Shows the currently defined file pool entries (see below for example output)
+filepool add -path <path> -types <typelist> [-position <pos>]	Add a new entry with the given properties as explained above. For the types, use a format like "rom tape disk". Optionally, you can also specify where in the list of existing file pools the new file pool should be added. By default, this is at the end.
+filepool remove <position>	Remove the file pool at the given position
+filepool reset	Reset the file pool settings to the default values
+An example of the default file pools for a Windows 7 system with user Quibus:
+
+1: C:/Users/Quibus/Documents/openMSX/share/systemroms  [system_rom]
+2: C:/Users/Quibus/Documents/openMSX/share/software  [rom disk tape]
+3: C:/Program Files/openMSX/share/systemroms  [system_rom]
+4: C:/Program Files/openMSX/share/software  [rom disk tape]
+The first one is the system ROMs dir in the user's home directory. The second is the software file pool for other software in the user's home directory. The last two are similar, but then on system level. On a UNIX like system, you get something very similar.
+
+findcheat
+This is a tool to find new cheats, for example for a certain game it can help you find the memory location where the number of remaining lives is stored. These cheats can later be added to the trainer command.
+
+It works more or less like this:
+
+Initialize the findcheat tool, this takes an initial snapshot of the MSX memory.
+Perform some action in the game that changes the variable that you're interested in. For example if you want to find the memory location where the number of lives is stored, you have to loose (or gain) a life in the game.
+Now use the findcheat tool to compare the current MSX memory state with the previous memory snapshot. findcheat offers a lot of possibilities here, for example you can search for memory locations that became bigger or smaller or locations whose value changed or didn't change.
+findcheat will show a list of memory locations that still match the search criteria.
+If there still are still too many matches, repeat from step 2.
+Vampier made a video tutorial on how to use findcheat, you can find it here.
+
+hd<x>
+Change the hard disk image. The commands hda, hdb etc. are assigned to all available hard disk drives in the MSX. They will not correspond to drive names as used in MSX-DOS.
+
+usage:
+hda <disk image>	Use hard disk image for hard disk "hda"
+hda insert <disk image>	Use hard disk image for hard disk "hda"
+hda	Show current hard disk image for hard disk "hda"
+Note: Because of disk caching, changing the hard disk when the MSX is running can lead to corruption of the hard disk contents. Therefore openMSX blocks the hd<x> commands unless the MSX is powered off. See power setting.
+help
+Shows help info for console commands.
+
+usage:
+help	Shows a list of all possible commands
+help <command>	Shows help info for a specific command
+help <command> <subcommand>	Some commands have more detailed help on subcommands
+incr
+Increment an integer setting.
+
+usage:
+incr <setting>	Increment the specified setting by one
+incr <setting> <num>	Increment the specified setting by the given amount (can be negative)
+examples:
+incr speed
+incr renshaturbo 10
+incr scanline -5
+iomap
+Shows what I/O ports are connected to which devices. The related command slotmap shows a similar overview, but for memory-mapped devices.
+
+usage:
+iomap	Shows the I/O map of the current MSX machine
+keymatrixdown / keymatrixup
+Press or release keys in the MSX keyboard matrix. Can be used to make an external program or Tcl script press MSX keys. For some more information about the keymatrix, you could read the article on the MAP.
+
+usage:
+keymatrixdown <row> <mask>	Press the indicated MSX keys
+keymatrixup <row> <mask>	Release the indicated MSX keys
+examples:
+keymatrixdown 6 0x01
+keymatrixup 6 0x01
+laserdiscplayer
+Controls the Laserdisc player; a Laserdisc can be inserted or ejected. When a real Laserdisc player is connected to an MSX, no other controls are available either.
+
+Note that this command is only available when the Pioneer PX-7 or Pioneer PX-V60 MSX machine is being emulated
+
+usage:
+laserdiscplayer insert <filename>	Inserts the specified file into the virtual laserdisc player.
+laserdiscplayer eject	Ejects the laserdisc from the virtual laserdisc player; this emulates pressing the eject button on a real Laserdisc Player.
+list_extensions
+Returns a list of inserted cartridges and extensions. These can be removed with the remove_extension command or additional items can be added with the cart and ext commands.
+
+usage:
+list_extensions	Lists all currently inserted cartridges and extensions
+load_icons
+Load a different icon set (used for the On Screen Display (OSD) LEDs).
+
+Icon sets are stored in the share/skins directory.
+
+usage:
+load_icons <name>	Load the given icon set, but don't change the position on the screen.
+load_icons <name> <position>	Load the given icon set and place them at the requested position. Position can be bottom, top, left or right.
+load_settings
+Load settings from a given settings XML file. The settings file does not have to be complete: settings that are not mentioned in the given file are left untouched. See also save_settings.
+
+usage:
+load_settings <filename>	Load settings from the given file
+machine
+Switch to a new MSX machine.
+
+usage:
+machine	Returns the handle for the currently active machine
+machine <machine name>	Switch to the specified machine, also returns the handle for that machine
+Note: The machine handle is mostly used by external applications controlling openMSX (see also Controlling openMSX from External Applications). For interactive use you can omit the machine handle to have the commands operate on the current machine.
+create_machine / load_machine / activate_machine / list_machines / delete_machine
+openMSX has the possibility to have multiple MSX machines concurrently in memory. This is more or less like multiple tabs in a web browser: you only work with one at-a-time, but you can have multiple open at the same time and easily switch between them. These commands are low level commands to manage this.
+
+Some commands are specific per machine, for example if you insert a disk image into the disk drive of the emulated MSX machine and if you have multiple MSX machines, you need to specify in which MSX machine you want to insert the disk. To solve this, we introduced the concept of the 'active' MSX machine (this is also the machine that is visible and audible). All unqualified machine-specific command will act on the active machine. If you want to execute the command in a specific machine, you can qualify the command with a machineID prefix.
+
+diska <diskimage>	execute the diska command in the active machine
+<machine-ID>::diska <diskimage>	execute the diska command in the specified machine
+create_machine:
+This command returns a new machine-id. This machine-id can be used in the following commands. In the web browser analogy this command would open a new empty tab.
+
+load_machine:
+This command loads a machine configuration (= MSX model) into the given machine-ID. In the web browser analogy, this command would load a page in a previously created empty tab. And unlike a web browser, where you can reload a different page in the same tab, you can only load a machine configuration once in the same machine-ID.
+
+activate_machine:
+This command activates the given machine-ID. At any time there can only be one active machine-ID. This is analogue to switching tabs in a web browser.
+
+list_machines:
+Returns a list of all currently existing machine-IDs.
+
+delete_machine:
+Deletes the given machine-ID. This is analogue to closing a tab in a web browser.
+
+examples:
+set oldID [machineID]	get the current machineID
+set newID [create_machine]	create a new machineID
+$newID::load_machine Philips_NMS_8250	load an MSX2 configuration in that new machineID
+activate_machine $newID	switch to the new machine
+activate_machine $oldID	switch back to old machine
+delete_machine $newID	delete new machine
+If you don't care about multiple active machines, the machine command is much more convenient to switch to a different MSX configuration.
+machine_info
+Shows information about a certain topic. This command is similar to the openmsx_info command. The topics of machine_info are all machine specific, while the topics of openmsx_info are generic.
+
+usage:
+machine_info	Shows a list of all possible topics
+machine_info <topic>	Shows info on the given topic
+message
+Show a message, with optional level (info, warning, error). By default this message will be shown in a colored box at the top of the screen for a (short) duration and then fade away.
+
+usage:
+message <text> [<level>]
+examples:
+message "Hello world!"
+message "Something bad happened" error
+monitor_type
+Select a monitor color profile.
+
+usage:
+monitor_type	Shows the currently selected color profile
+monitor_type -list	Lists all available color profiles
+monitor_type <profile>	Selects a new color profile
+Note: This command is a convenience wrapper around the color_matrix setting.
+mute_channels / unmute_channels / solo
+Mute or unmute specific individual channels of sound devices. The syntax is very similar to the record_channels command.
+
+usage:
+mute_channels <device> [<channels>]] [<device> [<channels>]]	Mute the specified channels of the specified device(s). If a device is given but no specific channels are specified, all channels of that device are muted. If no arguments are given at all, this command return a list of all currently muted channels.
+unmute_channels <device> [<channels>]] [<device> [<channels>]]	Unmute the specified channels of the specified device(s). If a device is given but no specific channels are specified, all channels of that device are unmuted. If no arguments are given at all, this command unmutes all channels of all devices.
+solo <device> [<channels>]] [<device> [<channels>]]	Mute all channels of all devices except for the specified channels.
+examples:
+mute_channels
+mute_channels PSG
+mute_channels SCC 2,4
+unmute_channels
+unmute_channels PSG 1 SCC 1,3-4
+solo PSG 3
+nowind<x>
+Similar to the disk<x> commands there is a nowind<x> command for each nowind interface. This command is modeled after the 'usbhost' command of the real nowind interface. Though only a subset of the options is supported. Here's a short overview of the command line options:
+
+long	short	explanation
+--image	-i	specify disk image
+--hdimage	-m	specify harddisk image
+--romdisk	-j	enable romdisk
+--ctrl	-c	no phantom disks
+--no-ctrl	-C	enable phantom disks
+--allow	-a	allow other diskroms to initialize
+--no-allow	-A	don't allow other diskroms to initialize
+If you don't pass any arguments to this command, you'll get an overview of the current nowind status.
+
+This command will create a certain amount of drives on the nowind interface and (optionally) insert diskimages in those drives. For each of these drives there will also be a nowind<x><1..8> command created. Those commands are similar to e.g. the diska command. They can be used to access the more advanced diskimage insertion options.
+
+In some cases it is needed to reboot the MSX before the changes take effect. In those cases you'll get a message that warns about this.
+
+examples:
+nowinda -a image.dsk -j	Image.dsk is inserted into drive A: and the romdisk will be drive B:. Other diskroms will be able to install drives as well. For example when the MSX has an internal diskdrive, drive C: en D: will be available as well.
+nowinda disk1.dsk disk2.dsk	The two images will be inserted in A: and B: respectively.
+nowinda -m hdimage.dsk	Inserts a harddisk image. All available partitions will be mounted as drives.
+nowinda -m hdimage.dsk:1	Inserts the first partition only.
+nowinda -m hdimage.dsk:2-4	Inserts the 2nd, 3th and 4th partition as drive A: B: and C:.
+openmsx_info
+Shows information about a certain topic. For machine-specific topics, use the related command machine_info.
+
+usage:
+openmsx_info	Shows a list of all possible topics
+openmsx_info <topic>	Shows info on the given topic
+openmsx_update
+Enable or disable update notifications of a certain type. This command is intended for external programs controlling openMSX. More about this in Controlling openMSX from External Applications.
+
+usage:
+openmsx_update enable <type>	enable notifications for this type
+openmsx_update disable <type>	disable notifications for this type
+examples:
+openmsx_update enable led
+openmsx_update disable setting
+osd
+openMSX has the possibility to show OSD (on screen display) elements. For example, the LEDs and the fps-indicator are implemented via OSD elements. This command allows to create new OSD elements, configure existing elements or delete elements.
+
+This command is only useful if you plan to adjust or enhance the openMSX OSD, or create your own OSD widgets.
+
+Execute "help osd" to get a detailed description of this command, which we will not repeat here.
+
+palette
+Shows the current VDP palette settings. Related command: vdpregs.
+
+usage:
+palette	Show the currently active color palette
+plug / unplug
+Plugs or unplugs a plug into a connector, for example plug a virtual joystick into a virtual joystick port.
+
+usage:
+plug	Shows all currently connected plugs
+plug <connector>	Shows currently connected plug for the specified connector
+plug <connector> <plug>	Plugs the specified plug into the specified connector
+unplug <connector>	Unplugs the plug connected to the specified connector
+examples:
+plug cassetteport cassetteplayer
+plug joyporta mouse
+plug printerport logger
+unplug joyportb
+psg_profile
+Select a PSG sound profile.
+
+usage:
+psg_profile	Shows the currently selected sound profile
+psg_profile -list	Lists all available sound profiles
+psg_profile <profile>	Selects a new sound profile
+Note: This command is a convenience wrapper around the PSG_vibrato_frequency, PSG_vibrato_percent, PSG_detune_frequency and PSG_detune_percent settings.
+record
+Controls video recording: write openMSX audio/video to an AVI file.
+
+usage:
+record start	Record to file "openmsxNNNN.avi"
+record start <filename>	Record to indicated file
+record start -prefix foo	Record to file "fooNNNN.avi"
+record stop	Stop recording
+record toggle	Toggle recording
+The start subcommand also accepts an optional -audioonly, -videoonly, -doublesize and a -triplesize flag. Videos are recorded in a 320×240 size by default, at 640×480 when the -doublesize flag is used and 960×720 when using the -triplesize flag. If only audio is recorded, the created file will be a WAV file instead of an AVI file.
+
+If any stereo sound devices are present or any sound device has an off-center balance, the recording will be made in stereo, otherwise it will be mono. If a recording is made in mono and then a stereo sound device is added, you'll receive a warning that stereo sound has been detected and that the two channels will be mixed down to mono. You can prevent this from happening by using the -stereo option to force a stereo recording even if no stereo devices are present at the time you enter the command. You can also force a mono recording with -mono to save space.
+
+The soundlog command is a shorthand for record -audioonly.
+
+Use record_chunks if you want some extra options. You can control the maximum length (in seconds) to record and also set up multiple recordings of a certain length. This is very useful if you want to record for e.g. YouTube. The default length is 14:59 (to make sure YouTube will accept it). Using this command implies -doublesize.
+
+Use record_chunks_on_framerate_changes if you want to split up the recording in several files, whenever the frame rate of the MSX changes. An AVI file cannot contain video of multiple frame rates, so sound and video will get out of sync if that happens without using this special version of the command. Do not specify the target filename with this variant, or openMSX will record all chunks to the same file.
+
+record_channels
+A high level command to record individual channels of sound chips to separate files. In the following variants of the command you can specify devices and channels. Multiple devices can be specified and multiple channels as well. If you want to specify channels of a device, put them right after the device. You can also specify all for the device, which means that all sound devices in the currently running MSX will be recorded. When starting recording, an option -prefix can be given to specify a filename prefix.
+
+usage:
+record_channels [start] <device> [<channels>] [<device> [<channels>]] [-prefix <prefix>]	Start recording the specified channel(s) of the specified device(s). If no channels are given, all channels of the device are recorded.
+record_channels stop [<device> [<channels>]] [<device> [<channels>]]	Stop recording the specified channel(s) of the specified device(s). If no channels are given, recording for all channels is stopped for the given device(s). If no devices are given, all channel recording is stopped.
+record_channels all -prefix justtesting	Record all channels of all sound devices and create the file names with prefix 'justtesting' (e.g. to quickly delete all these files again).
+record_channels list	Lists which channels of which sound chips are currently being recorded.
+examples:
+record_channels start PSG
+record_channels PSG
+record_channels SCC 1,4-5
+record_channels SCC PSG 1
+record_channels "MSX Music" 7-9 SCC 3,5 PSG 2
+record_channels stop
+record_channels stop PSG
+record_channels stop SCC 3,5
+record_channels list
+remove_extension
+Remove a cartridge or extension from a running MSX machine. See also the commands cart, ext, list_extensions.
+
+usage:
+remove_extension fmpac	Removes the FMPAC extension from the running MSX
+reset
+Emulates the pressing of the reset button on the MSX. This sends a reset pulse to all devices, but does not erase memory contents.
+
+usage:
+reset	Resets the current machine
+reverse
+Controls the reverse feature. When this feature is enabled (the default), openMSX will collect data while emulating, which enables you to go back (and forward) in MSX time. In other words: you cannot use the commands to go back and forward in time, if you disable the feature.
+
+usage:
+reverse start	Start collecting data (enable the reverse feature).
+reverse stop	Stop collecting data (disable reverse feature) and remove all collected data.
+reverse status	Gives information about the reverse feature and the data it collected. Mostly useful for scripts.
+reverse goback <n>	Go back <n> seconds in time. Of course, you cannot go back to a time before the time the reverse start command was given.
+reverse viewonlymode <on|off>	Control the view only mode of the reverse feature. In view only mode, the replay will never get interrupted by any user actions that normally would interrupt the replay. Use this to safely view a replay without accidentally ruining it by touching a key.
+reverse goto <time>	Go to the indicated absolute moment in MSX time (given in seconds). If the time is before the time openMSX started collecting data (with the reverse start command) openMSX will jump to the time when collecting started.
+reverse truncatereplay	Stop replaying and wipe all replay data that is in the future (so after now). This is useful if you are hindered by the future events somehow, for instance when you are playing a game and jumped too early and therefore reversed. Be careful with this, as there is no way to recover this future. If you are at time 0, it means your whole replay will be gone after executing this command!
+reverse savereplay [<filename>]	Save the collected data (an initial savestate and all collected input events) to a file.
+reverse loadreplay [-goto <begin|end|savetime|<n>>] [-viewonly] <filename>	Load the replay from the given file and start it. Loads the initial snapshot and starts replaying the recorded events. Enables the reverse feature automatically. With the -goto option, you can specify where to jump to in the replay after loading (begin is default), where savetime is the time at which the replay was saved and n is an absolute time in seconds in the replay. The -viewonly option is a shortcut to put the reverse feature in viewonly mode directly after loading the replay. Without this option, it will always go to normal mode.
+There are some extra helper commands to make the feature easier to use.
+
+usage:
+go_back_one_second / go_forward_one_second	Go back or forward one second in time (if possible). These are used for the default PageUp and PageDown key bindings.
+reverse_prev [<min> [<max>]]	Go back in time to the previous (internal) snapshot. The further back in the past the less dense the amount of snapshots are. So, executing this command multiple times, will take successively bigger steps in the past. You can optionally specify a minimal and maximal step size. You will at least go back the minimal amount of time (even if there's a snapshot closer to the current time) and at most the maximal amount of time (even if there's no snapshot within the maximum specified time from the current time).
+reverse_next [<min> [<max>]]	As reverse_prev but then it goes to the closest snapshot in the future (if possible).
+Because the reverse feature is very useful, it is automatically enabled via auto_enable_reverse setting.
+
+save_settings
+Write the current openMSX settings to a settings XML file. See also load_settings.
+
+If you disabled save_settings_on_exit, you can use this command to save your preferences.
+
+usage:
+save_settings	Save settings to the default settings file
+save_settings <filename>	Save settings to the given file
+savestate / loadstate / list_savestates / delete_savestate
+These commands can be used to manage savestates. These are much easier to use than the lowlevel store_machine and restore_machine commands.
+
+savestate [<name>]
+This creates a snapshot of the currently emulated MSX machine. Optionally you can specify a name for the savestate, if you omit this name, the default name quicksave will be taken.
+
+loadstate [<name>]
+This restores a previously created savestate. Like above you can specify a name which defaults to quicksave if omitted.
+
+list_savestates
+This returns the names of all previously created savestates.
+
+delete_savestate <name>
+Delete a previously created savestate.
+
+screenshot
+Take a screenshot of the openMSX screen. By default this takes a screenshot of the 'scaled' MSX screen (see scale_algorithm setting) without OSD elements (e.g. console and icons). If you want to include the OSD elements pass the -with-osd option. If you want a screenshot of the 'unscaled' raw MSX screen, pass the -raw option. The screenshots are PNG files and (by default) are saved in the screenshots subdirectory of the openMSX data directory in your home directory. There's also an option -no-sprites to take a screenshot with sprite rendering disabled.
+
+usage:
+screenshot [-with-osd] [-raw [-doublesize]] [-no-sprites] [-prefix <prefix>] [<filename>]
+examples:
+screenshot	Write screenshot to file "openmsxNNNN.png"
+screenshot <filename>	Write screenshot to indicated file
+screenshot -prefix foo	Write screenshot to file "fooNNNN.png"
+screenshot -raw	Create screenshot of the raw MSX screen only (so no icons or console and no scaling)
+screenshot -raw -doublesize	Create screenshot of the raw MSX screen only, with resolution 640×480
+screenshot -with-osd	Create screenshot of the scaled screen, including OSD elements
+screenshot -no-sprites	Create screenshot with sprite rendering disabled
+set
+Change or query the value of various settings. See also: unset.
+
+usage:
+set <setting>	Query the current value of the specified setting
+set <setting> <value>	Change the specified setting to the given value
+The settings that can be adjusted with this command are listed and explained later in this document.
+
+examples:
+set accuracy pixel
+set blur 25
+set scanline 20
+set deinterlace on
+slotmap
+Shows what devices are inserted into which slots. The related command iomap shows a similar overview, but for I/O mapped devices.
+
+usage:
+slotmap	Shows the slot map of the current MSX machine
+slotselect
+Shows the currently selected slots. To see what devices are located in the slots, use the slotmap command.
+
+usage:
+slotselect	Shows the currently selected slot for each page
+soundlog
+Controls sound logging: writing the openMSX sound to a WAV file.
+
+This command is a shorthand for record -audioonly.
+
+usage:
+soundlog start	Log sound to file "openmsxNNNN.wav"
+soundlog start <filename>	Log sound to indicated file
+soundlog start -prefix foo	Log sound to file "fooNNNN.wav"
+soundlog stop	Stop logging sound
+soundlog toggle	Toggle sound logging state
+store_machine / restore_machine
+These are low-level commands, used to implement savestates.
+
+store_machine:
+Saves the state of the specified machine to a file.
+
+store_machine	Save state of current machine to file "openmsxNNNN.xml.gz"
+store_machine <machineID>	Save state of indicated machine to file "openmsxNNNN.xml.gz"
+store_machine <machineID> <filename>	Save state of indicated machine to specified file
+restore_machine:
+Load a previously saved machine in a new machine-ID, next to the already available machines. See the section on activate_machine.
+
+restore_machine	Load state from last saved state in default directory
+restore_machine <filename>	Load state from indicated file
+Note: These commands are pretty low level. The savestate and loadstate scripts are built on top of this and are much more convenient to use.
+test_machine / test_all_machines / test_all_extensions
+Test whether the given MSX machine configuration works. For example whether you have all required system ROMs for this machine. See also load_machine.
+
+usage:
+test_machine <machine-config>	Test whether the given machine configuration is OK.
+Use the convenience commands test_all_machines and test_all_extensions to get a full overview on which system ROMs you are still missing.
+
+toggle
+Toggles any boolean (on/off) setting: if it was on, it will be turned off and vice versa. See also: cycle.
+
+usage:
+toggle <setting>	Toggles the specified setting
+examples:
+toggle mute
+toggle throttle
+trainer
+Control game trainers. You can enable or disable individual cheats of each trainer. Make use of the TAB key to see what is available. When switching trainers, the currently active trainer will be deactivated.
+
+usage:
+trainer	See which trainer is currently active
+trainer <game>	See which cheats are currently active in the trainer
+trainer <game> all	Activate all cheats in the trainer of <game>
+trainer <game> \[<cheat> ..\]	Toggle cheats of <game> on/off
+trainer deactivate	Deactivate all trainers
+examples:
+trainer Frogger all
+trainer "Circus Charlie" 1 2
+trainer Pippols lives "jump shoes"
+type / type_via_keyboard
+Type a string in the emulated MSX. This command automatically presses and releases keys in the simulated MSX keyboard matrix. This command is useful for demoing and for automating tasks in MSX-BASIC.
+
+The command has a -release option, with which you can specify that keys are always released before new ones are pressed. Some game input routines need this, but it also makes typing twice as slow.
+
+With the -freq option, you can tweak how fast typing goes and how long the keys will be pressed (and released if the -release option is used). Keys will be typed at the given frequency and will remain pressed/released for 1/freq seconds.
+
+This command should always work, because it is just like as if a user was actually typing on the MSX keyboard. It is therefore a bit slow, though. Check out the type_via_keybuf command if you're looking for something faster (but more limited in where it works). With the default_type_proc setting you can even make type_via_keybuf the standard implementation for the type command. Only do this if you really know what you're doing!
+
+usage:
+type "Hello world!"	Yet another manifestation of the most famous program
+type "PRINT \"Hi!\"\r"	Executes this basic command directly
+There are also a few scripts extending this command:
+
+type_from_file	With this command you can automatically type text which is stored in the given (text) file. Mostly useful if you want to type in some BASIC program fragment that you found somewhere and pasted in a text file.
+type_password_from_file	A special version of type_from_file, made to type in passwords of games, which you have stored in a file. The text file should have a special format: one password per line, lines starting with # are ignored. After the filename, you can give the index of the password to type (which is the index of the first non-comment and non-blank line in the file).
+unset
+Undefines a Tcl variable. When used on openMSX settings, they are reverted to their default value. See also: set.
+
+usage:
+unset <variable>	Undefines the given variable
+unset <setting>	Reverts the given setting to its default value
+user_setting
+This command is only meant to be used in Tcl scripts. It allows to create Tcl variables that act very much like built-in openMSX settings. They have a description (can be queried with "help set <setting-name>") and their value is stored saved/restored when openMSX is quit/restarted.
+
+Execute "help user_setting" to get a detailed description of this command.
+
+vdpregs
+Shows the current register settings of the Video Display Processor (VDP). Related command: palette.
+
+usage:
+vdpregs	Shows the current VDP control register contents
+other
+Most commands described above are generally useful. openMSX also has a bunch of other more specialized commands. Some of these are intended for programmers who code MSX programs using openMSX as a tool. Other of these commands are more like toys or examples that show the openMSX scripting capabilities.
+
+We've only listed a very brief overview of these commands. As always execute "help <command-name>" to get a more detailed description of the command.
+
+about	Search command and setting help-texts for the given keyword
+cpuregs	Gives an overview of the CPU registers
+data_file	Helps locate openMSX data files
+disasm	Print disassembled instructions at the given memory location
+getcolor	Query V99x8 palette settings
+get_active_cpu	Returns the active cpu, z80 or r800
+get_color_count	Gives an overview of the used colors in the current screen
+get_screen	Capture the content of a MSX text screen in a Tcl string
+get_screen_mode	Decodes the current screen mode from the VDP registers and returns it as a Tcl string. get_screen_mode_number returns it as a number which would also be used for the basic command SCREEN.
+get_selected_slot	Returns the selected slot for the given memory page
+guess_title	Use heuristics to guess the title of the current game (cartridge, disk or tape). For specific media use guess_cassette_title, guess_disk_title or guess_rom_title.
+listing	Reimplementation of the BASIC LIST command in Tcl
+load_debuggable	Write the content of a file to a openMSX debuggable
+main_menu_open / main_menu_close / main_menu_toggle	Control the visibility of the default OSD menu
+multi_screenshot	Take screenshots of multiple successive frames
+pc_in_slot	Check whether CPU is executing from the specified slot (useful as breakpoint condition)
+peek	Read a byte from the given memory location
+peek16	Read a 16 bit word from the given memory location
+poke	Write a byte to the given memory location. Use dpoke to only write if the to be written value is different from the current value.
+poke16	Write a 16 bit word to the given memory location
+psg_log	Log or replay PSG register values in binary format
+ram_watch	Add or remove RAM watch addresses to/from the list on the right side of the screen, useful for debugging or TASing
+reg	Read or write CPU registers
+reg_log	Log or replay register values for the specified debuggable in ASCII format
+rom_info	Gives information about the given ROM device, coming from the software database. If no argument is given, the first found (external) ROM device is assumed. This command replaces the info that was previously (before openMSX 0.8.1) automatically printed on stdout.
+run_to	Execute instructions until the PC reaches the specified address
+save_debuggable	Save the (partial) content of a debuggable to a file
+save_msx_screen	Saves the current MSX screen into an MSX compatible binary file (BLOAD format).
+save_to_file	Helper function to save data (e.g. the output of another command) to a file.
+setcolor	Change V99x8 palette settings
+set_help_text	Associate help text with a Tcl proc
+set_tabcompletion_proc	Associate tab completion with a Tcl proc
+showdebuggable	Print the content of a debuggable in a table
+showmem	Print the content of memory in a table
+show_osd	Print an overview of the defined OSD elements
+skip_instruction	Skip the current CPU instruction
+sprite_viewer	Show a widget with which you can view the sprite patterns
+stack	Print the top of the CPU stack
+step_in	Execute one CPU instruction, go into subroutines
+step_over	Execute one CPU instruction, but don't go into subroutines
+step_out	Step out of the current subroutine
+step_back	Step one instruction back in time
+text_echo	Echo all printed MSX text on stderr
+toggle_cursors	Show (or hide) a widget which shows which keys are pressed
+toggle_fps	Show (or hide) a frames-per-second (fps) indicator
+toggle_frame_counter	Show (or hide) a widget which shows the current frame number since start-up
+toggle_freq	Switch between PAL/NTSC
+toggle_info_panel	Show (or hide) a panel with various types of info on the currently running MSX (emulation); similar to the info in the panel you get when using the DIGIblue theme in blueMSX
+toggle_mog_overlay	Enable (or disable) graphical extra information and game hints when playing The Maze of Galious
+toggle_mog_editor	Enable (or disable) wall drawing and Popolon-placement with the mouse when playing The Maze of Galious; needs to have the MoG overlay enabled, see toggle_mog_overlay
+toggle_music_keyboard	Enable (or disable) keyboard view of all existing music channels. EXPERIMENTAL! Be careful, it's very slow when many channels are present in the system
+toggle_nemesis_1_shield	Enable (or disable) an OSD drawn shield in Nemesis (Gradius) 1, all enemy objects will repel from it
+toggle_osd_keyboard	Show (or hide) an on-screen keyboard (mostly useful for devices without physical keyboard); only supports an international keyboard-layout for now
+toggle_psg2scc	Enable (or disable) playing PSG sound on SCC
+toggle_reversebar	Show (or hide) the reverse bar, which helps to control and view the data of the reverse feature, which is automatically enabled when the bar is enabled
+toggle_scc_editor	Show a graphical view of the SCC chip(s) of the system, showing waveforms and volume per channel and also enables you to edit the waveforms per channel
+toggle_scc_viewer	Show a graphical view of the SCC chip(s) of the system, showing waveforms and volume per channel
+toggle_show_palette	Show (or hide) a graphical view on the palette registers
+toggle_tron	Show (or hide) an OSD implementation of the MSX-BASIC TRON command to trace what the current line number of the BASIC interpreter is
+toggle_vdp_access_test	Enable (or disable) reporting in the console when VDP I/O is done which could possibly cause data corruption on the slowest VDP (TMS9xxx), which is not emulated
+toggle_vdp_busy	Enable (or disable) display on the OSD how busy the VDP is
+toggle_vdp_reg_viewer	Enable (or disable) a widget that shows an overview of all VDP registers and highlights changes in the values
+toggle_vu_meters	Show (or hide) a graphical view of the volumes of the sound channels of several sound chips
+type_via_keybuf	Alternative to the type_via_keyboard (the default type command), that uses the keyboard buffer; only works if the running software uses the standard keyboard buffer functions to get keyboard input, but is much faster
+umrcallback	Example proc to use with the umr_callback setting
+vdpcmdinprogresscallback	Example proc to use with the vdpcmdinprogress_callback setting
+v9990reg	Read or write a V9990 register
+v9990regs	Print an overview of all V9990 registers
+vdpreg	Read or write a V99x8 register
+vdrive	Easily switch disks in multi-disk games
+vgm_rec	Record the music played by PSG, MSX-MUSIC, MSX-AUDIO, OPL4 and SCC into a VGM file
+vpeek/vpoke	Read/write bytes from/to video RAM
+The source code of all these scripts is located in share/scripts directory. Feel free to inspect these scripts and modify them to suit your needs.
+
+Settings
+Settings control many aspects of openMSX. Below, the available settings are listed and described. You can change setting values with the set command.
+
+accuracy
+Sets the render accuracy. openMSX supports three levels of render accuracy:
+
+screen accurate:
+Changes in VDP state become effective only once per video frame. Works well for most MSX1 software, but will break a lot of MSX2 software (anything that does so-called raster effects).
+line accurate:
+Changes in VDP state become effective only once per display line. Works well for almost all software.
+pixel accurate:
+Changes in VDP state become effective immediately. In this mode even the 'Unknown Reality scope part' is rendered correctly.
+In some cases switching to a lower accuracy level can speed up emulation, but in many cases the speed difference is negligible.
+
+The default is pixel accuracy, since this is the most realistic. If the software you are running shows a jittery screen split and you would prefer a stable screen split, switching to line accuracy can help.
+
+usage:
+set accuracy	Shows the current setting
+set accuracy screen	Selects screen accurate rendering
+set accuracy line	Selects line accurate rendering
+set accuracy pixel	Selects pixel accurate rendering
+audio-inputfilename
+Sets the audio file from which the wave input is read for the sampler.
+
+By default, it is read from "audio-input.wav" when available.
+
+usage:
+set audio-inputfilename	Shows the current setting
+set audio-inputfilename mysample.wav	Read from "mysample.wav"
+Note: The file is fully read into memory, so under Linux/UNIX do not attempt to read from a device node such as /dev/dsp.
+autoruncassettes
+Switches the "auto-run cassettes" feature on or off. When it's enabled, openMSX will try to type the proper loading instruction when a cassette is inserted.
+
+usage:
+set autoruncassettes	Shows the current setting
+set autoruncassettes on	Try to run cassettes automatically
+set autoruncassettes off	Do nothing when cassettes are inserted
+Note: Autorun is only supported for cassette images in the CAS format.
+autorunlaserdisc
+Switches the "auto-run laserdisc" feature on or off. When it's enabled, openMSX will try to type the proper loading instruction when a laserdisc is inserted.
+
+usage:
+set autorunlaserdisc	Shows the current setting
+set autorunlaserdisc on	Try to load Laserdiscs automatically
+set autorunlaserdisc off	Do nothing when Laserdiscs are inserted
+auto_enable_reverse
+Using the reverse feature has a small memory and performance cost. Therefore it has to be enabled before it can be used. This setting controls whether the reverse feature should automatically be activated when openMSX starts. On desktop computers this generally won't be a problem. But for small handheld devices it can be.
+
+usage:
+set auto_enable_reverse	Shows the current setting
+set auto_enable_reverse off	Don't automatically enable the reverse feature
+set auto_enable_reverse on	Enable the reverse feature when openMSX starts
+set auto_enable_reverse gui	Enable the reverse feature and the reverse bar when openMSX starts
+auto_save_replay
+Enable this setting to make automatic backups of your current replay. The replay is saved to the filename specified in the auto_save_replay_filename setting (default: "auto_save") at an interval as specified by the auto_save_replay_interval setting (default: 30 seconds). The interval is in real clock time, not in MSX time.
+
+blur
+Sets the amount of horizontal blur effect. A value of 0 turns off blur, while 100 selects maximum blur.
+
+usage:
+set blur	Shows the current setting
+set blur <value>	Change the value
+Note: Only some scale algorithms apply horizontal blur; the default algorithm "simple" does.
+bootsector
+Sets the boot sector type for DirAsDSK. Default: DOS2. Only relevant on turboR, because it boots differently depending on the type of boot sector on the disk in drive A.
+
+usage:
+set bootsector	Shows the current setting
+set bootsector DOS1	Use a DOS1 boot sector
+brightness
+Controls the brightness of the video output. Can be between -100 and 100. Lower values are darker, higher values are brighter. The default is 0, which is neutral. This setting shifts the brightness of all colors, including black and white, while the gamma setting changes the relative brightness of colors but does not change black and white.
+
+The section about the noise setting describes a typical way of using brightness.
+
+usage:
+set brightness	Shows the current setting
+set brightness 5	Make the video output a bit brighter than default
+cmdtiming
+Controls VDP command execution timing.
+
+This is useful for debugging and for speeding up games where the command engine performance is a bottleneck.
+
+usage:
+set cmdtiming	Shows the current setting
+set cmdtiming broken	Make VDP commands finish instantly
+set cmdtiming real	Make VDP commands take a realistic amount of time
+Note: When set to broken the emulated MSX acts different from a real MSX. This might cause some software to fail.
+color_matrix
+This setting represents a 3×3 matrix that is used to transform MSX RGB colors to host RGB colors. This setting can be used to generate all kind of color schemes, see scripts/monitor.tcl for examples.
+
+To get the following color transformation:
+
+        | a b c |   | Rm |   | Rh |
+        | d e f | × | Gm | = | Gh |
+        | g h i |   | Bm |   | Bh |
+  
+Use this command:
+
+        set color_matrix { { a b c } { d e f } { g h i } }
+  
+usage:
+set color_matrix	Shows the current value
+set color_matrix { { 1 0 0 } { 0 1 0 } { 0 0 1 } }	This is the default (no color transformation)
+set color_matrix { { .33 .33 .33 } { .33 .33 .33 } { .33 .33 .33 } }	Transform to grey scale
+Note: It is often more convenient to use the monitor_type command.
+console
+Turns the openMSX on-screen console on or off.
+
+usage:
+set console	Shows the current setting
+set console on	Turns the console on
+set console off	Turns the console off
+consolebackground
+Change the console background image. Only images in the PNG format are supported. Background images may also have an alpha channel (amount of transparency per pixel).
+
+usage:
+set consolebackground	Shows the current setting
+set consolebackground <image>	Sets a new background image
+consolecolumns
+Change the width of the console measured by the number of columns.
+
+usage:
+set consolecolumns	Shows the current setting
+set consolecolumns <value>	Set the specified width
+consolefont
+Change the console font. This should be the filename of a True Type Font. The default value is skins/VeraMono.ttf.gz.
+
+Font files of other types than True Type Fonts (TTF) are not supported. The font must also be monospaced.
+
+usage:
+set consolefont	Shows the current setting
+set consolefont <myfont.ttf>	Sets a new font
+consolefontsize
+Set the size for the console font. The default value is 12.
+
+usage:
+set consolefontsize	Shows the current setting
+set consolefontsize 16	Set a bigger than default font size
+console_history_size
+Determines how many commands are saved into the console history.
+
+usage:
+set console_history_size	Shows the current setting
+set console_history_size 5000	Keep a maximum of 5000 commands in the console history
+consoleplacement
+Changes the position of the console on the emulator screen.
+
+usage:
+set consoleplacement	Shows the current setting
+set consoleplacement <place>	Moves the console to the specified location; <place> can be topleft, top, topright, left, center, right, bottomleft, bottom or bottomright.
+consolerows
+Change the height of the console measured by the number of rows.
+
+usage:
+set consolerows	Shows the current setting
+set consolerows <value>	Set the specified number of rows
+console_remove_doubles
+Determines whether the console history remembers two identical subsequent commands.
+
+usage:
+set console_remove_doubles	Shows the current setting
+set console_remove_doubles on	Remove (do not remember) the last command if it's the same as the previous (default)
+set console_remove_doubles off	Allow double subsequent command entries in the console history
+contrast
+Controls the contrast of the video output. Can be between -100 and 100. Lower values are less contrast, higher values are more contrast. The default is 0, which is neutral.
+
+The section about the noise setting describes a typical way of using contrast.
+
+usage:
+set contrast	Shows the current setting
+set contrast -5	Reduce the video contrast a bit
+cputrace
+Enable/disable CPU instruction tracing. When enabled, the state of the CPU (Z80/R800) is printed on stdout after every instruction. This creates a lot of output and slows down emulation considerably, but it can be very useful for debugging.
+
+usage:
+set cputrace	Shows the current setting
+set cputrace on	Enables CPU tracing
+set cputrace off	Disables CPU tracing
+debugoutput
+Selects the file to where the output from the debug device goes.
+
+The User's Manual describes the debug device in more detail.
+
+usage:
+set debugoutput	Shows the current output file name
+set debugoutput stdout	Writes debug output to openMSX's standard output stream
+set debugoutput stderr	Writes debug output to openMSX's standard error stream
+set debugoutput <output file>	Writes debug output to the specified file
+Note: This setting only exists if the debugdevice extension is present in the current MSX machine.
+default_machine
+Selects the default MSX model. openMSX uses this machine when it is started without the -machine option. This is a typical setting that should be saved, see also save_settings.
+
+usage:
+set default_machine	Shows current setting
+set default_machine Panasonic_FS-A1GT	Use the turboR GT the next time openMSX is started
+DirAsDSKmode
+Determine the behavior of the DirAsDSK when inserting a directory to be used as diskimage.
+
+The possible values are read_only and full. The default mode is full.
+
+read_only	The MSX can not write to the virtual disk.
+Changes on the host-OS are still reflected on the virtual disk, however.
+full	All changes are performed both ways, no restrictions apply.
+usage:
+set DirAsDSKmode	Shows the current setting
+set DirAsDSKmode read_only	Disk image will be read only
+Note: this setting is only used when the directory is inserted, it is not possible to change the behaviour of the current virtual disk by altering the setting. The new setting will become effective after the current virtual disk has been ejected.
+deflicker
+Turns deflicker on/off. deflicker is a filter which tries to detect pixels that alternate each frame between two different color values and replaces those alternations with the average color. It gives a very nice result for software (mostly demos) that use this technique to get the optical illusion of more colors than are actually supported by the hardware. It also works well in games with flickering sprites on a static background (like Maze of Galious). This setting is disabled by default because there aren't that many situations were it really improves video quality and it does have a performance cost.
+
+usage:
+set deflicker	Shows the current setting
+set deflicker on	Turns deflicker on
+set deflicker off	Turns deflicker off
+deinterlace
+Turns deinterlacing on/off. Deinterlace is a filter which combines the even and odd field of interlaced video into a single frame which has double vertical resolution. It results in a sharp and stable image, but can show artifacts on fast animations.
+
+usage:
+set deinterlace	Shows the current setting
+set deinterlace on	Turns deinterlacing on
+set deinterlace off	Turns deinterlacing off
+Note: Deinterlacing is only supported for scale_factors bigger or equal to 2.
+disablesprites
+Can be used to disable sprite rendering. Only the rendering itself is disabled, all other MSX behaviour (like sprite collision detection) stays the same.
+
+usage:
+set disablesprites	Shows the current setting
+set disablesprites on	Disable sprite rendering
+set disablesprites off	Enable sprite rendering (the default)
+display_deform
+Select display deformation effect. This effect is only supported in the SDLGL-PP renderer.
+
+usage:
+set display_deform	Shows the current setting
+set display_deform normal	Turns off display deform
+set display_deform 3d	Deforms the image in 3D, to look like a CRT (like JEmu2)
+Note: In the past there was also a 'horizontal_stretch' mode. This is now replaced by the horizontal_stretch setting.
+di_halt_callback
+Selects the Tcl procedure to be called when the running MSX software has executed a HALT instruction while the interrupts are disabled (DI).
+
+The default openmsx startup scripts initialize this setting with a proc that prints a warning message.
+
+usage:
+set di_halt_callback	Shows the current setting
+set di_halt_callback my_callback_proc	Sets a new callback proc
+enable_session_management
+Controls session management. When enabled, openMSX will store the state of all machines when you exit openMSX and restore that state again when starting it up next time. Note that the reverse history is not saved.
+
+Sessions can also be saved manually with the command save_session, and explicitly loaded with load_session. A list of saved sessions can be retrieved with list_sessions.
+
+frequency
+Sets the sound mixer frequency. Sound hardware and sound APIs typically support a limited set of frequencies, such as 11025 Hz, 22050 Hz, 44100 Hz and 48000 Hz.
+
+usage:
+set frequency	Shows the current setting
+set frequency 44100	Use 44.1 kHz mixing frequency (CD quality)
+firmwareswitch
+Some machines (e.g. turboR) have a switch on the front (or on the back) that controls if the machine should boot 'normally' or start the built-in software, also called firmware. This setting controls the position of that switch.
+
+usage:
+set firmwareswitch	Shows the current setting
+set firmwareswitch on	Boot into the internal software
+set firmwareswitch off	Boot into MSX-BASIC or on-disk software
+fullscreen
+Switch to/from fullscreen mode.
+
+usage:
+set fullscreen	Shows the current setting
+set fullscreen on	Switch to fullscreen mode
+set fullscreen off	Switch to windowed mode
+fullspeedwhenloading
+When enabled, openMSX will try to detect when the MSX is loading from diskette, cassette or laserdisc. During loading openMSX will run at full speed (throttle off). This can be convenient if you're not interested in the realistic but slow loading times on MSX. Default is off, because it is not according to the behaviour of a real MSX.
+
+Unlike the fast loading features in for example fMSX, fullspeedwhenloading does not intercept BIOS calls. Instead, it speeds up the emulation of the entire MSX, including all hardware devices.
+
+usage:
+set fullspeedwhenloading	Shows the current setting
+set fullspeedwhenloading on	Load as fast as possible
+set fullspeedwhenloading off	Load at the same speed as a real MSX
+gamma
+Sets the amount of gamma correction. A value of 1.0 will turn off gamma correction. Lower values will result in a darker image, higher values in a brighter image.
+
+If you want to get a realistic picture, set the openMSX gamma correction to PC gamma / MSX gamma. TVs use a standardised gamma of 2.5, let's take that as the value of MSX gamma. You can measure the gamma of your PC screen with a simple test such as the Gamma Measurement Image in Robert W. Berger's "An Explanation of Monitor Gamma". If your PC gamma would be for example 2.0, the most realistic value for gamma correction would be 2.0 / 2.5 = 0.8.
+
+Alternatively, you can just try a few values and see what you like.
+
+usage:
+set gamma	Shows the current value
+set gamma <num>	Sets a new gamma correction amount
+glow
+Sets the amount of afterglow effect: 0 is off and 100 is a very heavy afterglow.
+
+usage:
+set glow	Shows the current setting
+set glow <value>	Change the amount of afterglow
+Note: Not all renderers support this.
+grabinput
+Controls whether openMSX grabs all input events or not. When this setting is turned on, all input events are directly passed to openMSX. The mouse pointer can't leave the openMSX window and the window manager won't be able to react to keyboard shortcuts.
+
+You can turn this setting on when you want to use mouse-controlled MSX software while openMSX is in windowed mode. It is best turned off in all other cases. See also escape_grab.
+
+usage:
+set grabinput	Shows the current setting
+set grabinput on	Starts grabbing all input events
+set grabinput off	Stops grabbing all input events
+horizontal_stretch
+Sets the amount of horizontal stretch, thus also the aspect ratio of the screen. More specifically, a setting of n means stretch the center n MSX pixels to the full width of the host output window (at scale_factor 1).
+
+usage:
+set horizontal_stretch	Shows the current setting
+set horizontal_stretch <value>	Change the amount of horizontal stretch
+examples of typical useful values:
+set horizontal_stretch 320 (no horizontal stretch)
+set horizontal_stretch 272 (approach real aspect ratio of MSX screen)
+set horizontal_stretch 280 (default: show all generated border pixels, so that all border demo effects are still visible)
+set horizontal_stretch 256 (borders are not visible at all; doesn't work well in combination with set-adjust)
+Note: when using the SDL renderer, this setting may cause a lot more CPU usage (e.g. on a Dingoo) when not using the value 320.
+inputdelay
+Input events for the MSX machine are delayed by this amount. Increase this value when the MSX machine misses keyboard presses when you type very fast. Decrease this value to reduce the latency between pressing a key on the host machine and seeing it being typed in the MSX machine.
+
+usage:
+set inputdelay	Shows the current value
+set inputdelay <time>	Sets the input delay to the specified number of seconds
+Note: The default value of 0.0 seconds (no extra delay) should almost always be OK. It only makes sense to increase this setting if you have a slow host machine and you're typing text very fast and the emulated MSX machine misses (some of) the keys you typed.
+interleave_black_frame
+Insert a black frame in between each normal MSX frame. Useful on (100Hz+) lightboost enabled monitors to reduce motion blur and double frame artifacts.
+
+Make sure you configure your monitor to use a refresh rate of 100Hz (for a PAL MSX machine) or to 120Hz (for a NTSC machine). The brightness will decrease, so adjust the gamma, brightness and contrast settings to compensate.
+
+usage:
+set interleave_black_frame	Shows the current value
+set interleave_black_frame true	Enable this feature.
+invalid_psg_directions_callback
+Selects the Tcl procedure to be called when the running MSX software has selected invalid PSG port directions (port A should always be set as input).
+
+The default openmsx startup scripts initialize this setting with a proc that prints a warning message just once. Though if you're a developer you may want to change this to always print the warning or automatically break emulation when this happens so you can debug the problem.
+
+usage:
+set invalid_psg_directions_callback	Shows the current setting
+set invalid_psg_directions_callback my_callback_proc	Sets a new callback proc
+joystick<n>_config
+This setting configures how the buttons/axis of the host joystick(s) are mapped to the corresponding inputs of the emulated MSX joystick(s). For many joysticks the initial value of this setting provides an acceptable default mapping. But depending on your joystick type and taste you may want to tweak it.
+
+The value of this setting is a Tcl dictionary. This means it's a list of key/value pairs where each even element is a key and each odd element is the corresponding value. The keys in this dictionary represent the 6 possible MSX joystick inputs. Possible key values are LEFT, RIGHT, UP, DOWN, A and B. The corresponding dictionary-values are lists of host joystick inputs. Possible elements for these lists are button<n>, +axis<n>, -axis<n> and {L,R,U,D}_hat<n>.
+
+Let's explain this with an example. The following is the default value for this setting:
+ LEFT -axis0 RIGHT +axis0 UP -axis1 DOWN +axis1 A {button0 button2} B {button1 button3}
+Axis 0 is usually the primary X-axis of the host joystick. When that axis is moved towards negative values the LEFT input switch on the emulated joystick is activated. When it is moved towards positive values the RIGHT MSX input switch is activated. Similarly host axis1 is mapped to the UP and DOWN MSX inputs. The (default) configuration for the buttons is slightly more complicated. Here both host button 0 and 2 will activate MSX button A, and both button 1 and 3 will activate MSX button B. (This example shows a host joystick with 4 buttons, but in general (by default) all even host buttons will active MSX button A and all odd host buttons will active MSX button B).
+
+There are no restrictions on the possible mappings. For example it is allowed to map host axis/buttons to MSX buttons/axis or vice-versa. This allows to for example map a host joypad (which acts like 4 buttons) to the MSX directional inputs. (Technically speaking the MSX axis inputs LEFT, RIGHT, UP and DOWN are just 4 input switches, just like the buttons A and B are just 2 input switches). It's also allowed to map the same host action to multiple MSX inputs. This allows to for example make one specific host button press both MSX buttons simultaneously (e.g. to have a 'crouch button' in Metal Gear).
+
+It is possible to set this setting directly using the set command, but often using the Tcl dict command is more convenient. See below for some examples.
+
+usage:
+set joystick1_config	Shows the current configuration of the first joystick
+dict set joystick1_config A button5	(Re)map MSX button A to (only) host button 5. Leave the mapping of the other MSX inputs unchanged.
+dict set joystick1_config A {button0 button2}
+dict set joystick1_config B {button1 button2}	Map button 0 to A, 1 to B and 2 to A+B. So pressing host button 2 will press both MSX buttons.
+dict set joystick1_config LEFT {-axis0 -axis2 button10}
+dict set joystick1_config RIGHT {+axis0 +axis2 button11}
+dict set joystick1_config UP {-axis1 -axis3 button12}
+dict set joystick1_config DOWN {+axis1 +axis3 button13}	Map 2 pairs of axis and 1 keypad (4 buttons) to the MSX direction inputs.
+dict lappend joystick1_config LEFT L_hat0
+dict lappend joystick1_config RIGHT R_hat0
+dict lappend joystick1_config UP U_hat0
+dict lappend joystick1_config DOWN D_hat0	Additionally map hat0 to the 4 MSX directions.
+joystick<n>_deadzone
+This setting configures how big the dead center zone of an (analogue) joystick is. This is expressed as a percentage: 0 means no dead zone, 100 means everything falls inside the dead zone.
+
+usage:
+set joystick1_deadzone	Shows the current size of the dead zone of the first joystick
+set joystick1_deadzone 25	Set the size of the dead zone to ¼ of the total range
+kbd_auto_toggle_code_kana_lock
+Switches the "Automatically toggle the CODE/KANA lock" feature on or off. When it's on, openMSX will automatically toggle the CODE/KANA lock when a user enters a character for which the CODE/KANA lock state must be changed.
+
+usage:
+set kbd_auto_toggle_code_kana_lock	Shows the current setting
+set kbd_auto_toggle_code_kana_lock on	Automatically toggle the CODE/KANA lock when required
+set kbd_auto_toggle_code_kana_lock off	Only toggle CODE/KANA lock status when user presses the CODE/KANA lock key
+Note: This only works on MSX models for which the CODE/KANA key locks (e.g. Japanese MSX models and the Philips VG8010). On other models, this setting is ignored.
+kbd_code_kana_host_key
+Host key that maps to the MSX CODE/KANA key. By default right-ALT (RALT) key.
+
+It is especially useful for people with AZERTY host keyboard, on which the RALT key has a special function; on azerty keyboards it is called the ALT-GR key and not the right-ALT key and it's used to enter some special characters (some keys are tagged with 3 characters; normal, key+SHIFT, key+ALT-GR).
+
+It is also useful for people with a Japanese (jp106) keyboard; they can map the HENKAN_MODE key (which is similar to the KANA Lock on Japanese MSX models) to the CODE/KANA key.
+
+usage:
+set kbd_code_kana_host_key	Shows the current setting
+set kbd_code_kana_host_key MENU	Binds the MENU key on the host keyboard to the MSX CODE/KANA key
+set kbd_code_kana_host_key HENKAN_MODE	Binds the HENKAN_MODE key on the host keyboard to the MSX CODE/KANA key
+kbd_deadkey1_host_key
+Host key that maps to the (1st) dead key. By default right-CTRL (RCTRL) key.
+
+Some MSX models have one dead key that can be used to enter accented charachters. For example the MSX models sold in the Netherlands have a dead key that has following four accents printed on it: ` ´ ^ ¨. On the other hand, the Brazilian Gradiente Expert XP-800 has following four accents on its dead key: ` ´ ^ ~.
+
+There are also some MSX models with multiple dead keys like for example the Brazilian Gradiente Expert Plus, which has two dead keys and the different Sharp Hotbit models that have three dead keys. On such machines, this setting is for the first dead key which can be used to enter following two accents: ´ `.
+
+In order to enter an accented character on the MSX, you first have to press and release the dead key, optionally together with SHIFT, CODE or CODE+SHIFT and then the correct character. The combination with CODE or CODE+SHIFT is only relevant for the MSX models with a single dead key that can be used to enter four different accents.
+
+Following table shows for example how to enter respectively ù, ú, û or ü on the MSX models sold in the Netherlands:
+
+Key presses	Charachter
+DEAD_KEY1 followed by u	ù
+DEAD_KEY1+SHIFT followed by u	ú
+DEAD_KEY1+CODE followed by u	û
+DEAD_KEY1+SHIFT+CODE followed by u	ü
+In order to use the dead key in openMSX, you must map an appropriate host key to the DEAD_KEY1 of the MSX and another one to the CODE key of the MSX with respectively this kbd_deadkey1_host_key setting and the above documented kbd_code_kana_host_key setting.
+
+Note that especially the last key combination (DEAD_KEY1+SHIFT+CODE) can be impossible to enter on some host systems; depending on the host operating system, keyboard type and keyboard driver it may be impossible for the host system to send a combination of three keys at once to an application like openMSX. Unfortunately openMSX or its developers can't do anything about that.
+
+usage:
+set kbd_deadkey1_host_key	Shows the current setting
+set kbd_deadkey1_host_key PAGEUP	Binds the PAGEUP key on the host keyboard to the 1st dead key
+Note that to use for example PAGEUP as 1st dead key you will have to unbind it from the go_back_one_step command in the console; by default openMSX has bound the PAGEUP key to the go_back_one_step command and such a binding takes precedence over keyboard mappings, so if you want to use PAGEUP as the 1st dead key you will have to enter following additional command in the console: unbind PAGEUP.
+
+kbd_deadkey2_host_key
+Host key that maps to the 2nd dead key. By default Page Up (PAGEUP) key.
+
+This is only applicable to MSX models that have at least two dead keys, like the Brazilian Hotbit models or the Brazilian Gradiente Expert Plus or other Gradiente models with Gradiente basic version 1.1.
+
+On the Hotbit models, the second dead key can be used to enter accent ¨ while on the Gradiente 1.1 models, the second dead key can be used to enter following accents: ~ ^.
+
+It can be used in the same manner as the first dead key, explained in previous section.
+
+usage:
+set kbd_deadkey2_host_key	Shows the current setting
+set kbd_deadkey2_host_key PAGEDOWN	Binds the PAGEDOWN key on the host keyboard to the 2nd dead key
+Note that to use for example PAGEUP or PAGEDOWN as a dead key you will have to unbind them from the default functions in openMSX using the console; by default openMSX has bound the PAGEUP key to the go_back_one_step command and the PAGEDOWN key to the go_forward_one_step command. Such a binding takes precedence over keyboard mappings, so if you want to use PAGEUP or PAGEDOWN as the second dead key you will have to enter following additional commands in the console: unbind PAGEUP or unbind PAGEDOWN.
+
+kbd_deadkey3_host_key
+Host key that maps to the 3rd dead key. By default Page Down (PAGEDOWN) key.
+
+This is only applicable to MSX models with at least three dead keys, like the Sharp Hotbit models.
+
+On the Hotbit models, the third dead key can be used to enter following two accents: ~ ^.
+
+usage:
+set kbd_deadkey3_host_key	Shows the current setting
+set kbd_deadkey3_host_key RCTRL	Binds the Right CTRL (RCTRL) key on the host keyboard to the 3rd dead key
+Note that to use for example PAGEDOWN (default setting!) as the 3rd dead key you will have to unbind it from the go_forward_one_step command in openMSX using the console; by default openMSX has bound the PAGEUP key to the go_back_one_step command. It is a very useful setting for many openMSX users when playing games but unfortunately it conflicts with the default set-up for the third dead key. Such a command binding takes precedence over keyboard mappings, so if you want to use PAGEDOWN as the third dead key you will have to enter following additional command in the console: unbind PAGEDOWN.
+
+kbd_mapping_mode
+The keyboard driver can work in two mapping modes; KEY mapping and CHARACTER mapping.
+
+KEY mapping:
+A key pressed on the host keyboard maps to one specific key on the MSX keyboard. This mode is convenient when the host keyboard and the MSX keyboard have the same layout or when working with a program that directly reads the keyboard matrix and forces the user to enter a certain key combination that can not be auto-generated in the CHARACTER mapping mode.
+CHARACTER mapping:
+A character entered by the user is mapped to the correct key combination on the MSX to enter that character. For example, when the user enters an ! character and openMSX is emulating an 'international' MSX model, the keyboard driver will press SHIFT and 1 on the MSX keyboard. This will be done regardless of the key or keys that the user pressed on the host keyboard to enter the ! character.
+This is especially useful when the user has an AZERTY host keyboard and is working on a QWERTY style MSX or when he has a US-QWERTY keyboard and is working on a Japanese MSX.
+Note that special keys (like CAPSLOCK) are mapped directly, just like in the KEY mapping mode.
+usage:
+set kbd_mapping_mode	Shows the current mode
+set kbd_mapping_mode CHARACTER	Set the CHARACTER mapping mode
+set kbd_mapping_mode KEY	Set the KEY mapping mode
+kbd_numkeypad_always_enabled
+Some real MSX computers do not have a numeric keypad. openMSX will ignore key presses on the host numeric keypad when emulating such an MSX model. With this parameter, you can indicate that even on such MSX models, presses on the host numeric keypad must be mapped to the MSX numeric keypad. So, you can override accurate behaviour with it, which is the reason that by default, this setting is set to 'off'.
+
+usage:
+set kbd_numkeypad_always_enabled	Shows the current setting
+set kbd_numkeypad_always_enabled on	Enables numeric keypad, even if the emulated MSX does not have one
+kbd_numkeypad_enter_key
+There is a subtle difference between numeric keypad of MSX computers and of most host computers; the MSX computers have a '.' and a ',' on the numeric keypad. On the other hand, the host computers have a '.' and an 'ENTER' key on the keypad.
+
+In some respect it is logical that the 'ENTER' key on the host numeric keypad is mapped to the 'normal' MSX 'ENTER' key. On the other hand, that would make it impossible to enter the ',' on the MSX numeric keypad. Therefore, the user can choose whether the host numeric keypad ENTER key should be mapped to the MSX numeric keypad ',' (which is the default) or to the main 'ENTER' key.
+
+usage:
+set kbd_numkeypad_enter_key	Shows the current value
+set kbd_numkeypad_enter_key ENTER	Maps the keypad enter key to the main 'ENTER' key, instead of the comma key on the MSX keypad
+kbd_trace_key_presses
+Log SDL key code, SDL modifiers and Unicode value for each key that gets pressed on the host keyboard on stderr. Also show Unicode value and corresponding MSX key-presses for characters that get 'pasted' into the MSX by the console type command. This setting is especially useful when defining unicode keymap files, so that you can find out the unicode values belonging to certain keys/characters.
+
+usage:
+set kbd_trace_key_presses	Shows the current setting
+set kbd_trace_key_presses on	Turn logging of key presses on
+keyjoystick<n>.<button>
+Configure the keys of the keyjoysticks. It's likely this will change in the future.
+
+Valid values for <n>: 1, 2.
+
+Valid values for <button>: up, down, left, right, triga, trigb.
+
+usage:
+set keyjoystick1.up W
+set keyjoystick1.down S
+set keyjoystick1.left A
+set keyjoystick1.right D
+set keyjoystick1.triga SPACE
+led_<name>
+These are read-only settings. Their value reflects the current status of the corresponding LED on the emulated MSX machine. The currently supported LED names are: power, caps, kana, pause, turbo and FDD.
+
+As for any setting you can use the native trace Tcl command to trigger a callback when the value of these settings changes. (In fact this possibility was the main motivation to make these read-only settings instead of topics of the machine_info command.)
+
+limitsprites
+Controls whether the VDP has a limit on the number of sprites it can display per line. The default is on, because the real VDP has such a limit. You can turn off the limit to reduce sprite flashing in games such as Aleste. Note that some games (Penguin Adventure, among others) make use of this limitation, so they will display incorrectly if the limit is turned off.
+
+The 5th/9th sprite status flag of the VDP is not influenced by the limitsprites setting: the flag always takes the limit into account.
+
+usage:
+set limitsprites	Shows the current value
+set limitsprites on	Limits number of sprites per line
+set limitsprites off	Turns off number of sprites per line limit
+master_volume
+Controls the overall openMSX volume. The volume of individual sound devices can be controlled with the <soundchip>_volume settings.
+
+usage:
+set master_volume	Shows current setting
+set master_volume 50	Sets master volume to 50%
+maxframeskip
+Sets the maximum amount of frames to skip: show a frame and then skip at most <number> frames. So 0 means show everything (no frame skipping), 1 means show at least every second frame etc.
+
+Frame skipping is done on demand, as a way to keep the flow of time for the emulated MSX in sync with the flow of real time. You can set limits on the amount of frame skipping with the minframeskip and maxframeskip setting.
+
+In a situation where the number of consecutive frames specified by maxframeskip has been skipped, openMSX will display the next frame, even if that means emulation will start lagging behind real time.
+
+When throttle is off, the number of skipped frames will be equal to maxframeskip.
+
+usage:
+set maxframeskip	Shows the current setting
+set maxframeskip <number>	Sets the maximum number of consecutive frame skips
+midi-in-readfilename
+Sets the file from which the MIDI input is read. By default, it is set to /dev/midi when available.
+
+usage:
+set midi-in-readfilename	Shows the current setting
+set midi-in-readfilename mymidilog.dat	Read MIDI events from "mymidilog.dat"
+midi-out-logfilename
+Sets the file to which the MIDI output is logged. By default, it logs to /dev/midi when available.
+
+usage:
+set midi-out-logfilename	Shows the current setting
+set midi-out-logfilename mymidilog.dat	Log MIDI events to "mymidilog.dat"
+minframeskip
+Sets the minimum amount of frames to skip: show a frame and then skip at least <number> frames. So 0 means no forced frame skipping, 1 means skip at least every second frame etc.
+
+Frame skipping is done on demand, as a way to keep the flow of time for the emulated MSX in sync with the flow of real time. You can set limits on the amount of frame skipping with the minframeskip and maxframeskip setting.
+
+The minframeskip setting can be useful if you want to ease the burden on your PC processor, for example for longer battery life on a laptop. It can also be useful if your PC is consistently too slow to run without frame skipping: in such cases video might be smoother with a low but constant frame rate than with a fluctuating frame rate.
+
+usage:
+set minframeskip	Shows the current setting
+set minframeskip <number>	Sets the number of frame skips
+mode
+Sets the active mode. A mode is a set of settings (mostly key bindings, but also OSD widgets that are activated) that are most suitable for a certain task. Currently only mode 'normal' and 'tas' exist.
+
+usage:
+set mode	Shows the current setting
+set mode tas	Change mode to TAS mode
+set mode normal	Set mode back to normal, which is the default (all purpose) mode
+TAS mode
+So far, the only special mode is the TAS mode, which is made for doing Tool Assisted Speedruns, with TAS widgets and easier ways to save replays. It is still experimental, but already very useful for doing a TAS. This mode enables the following widgets:
+
+frame counter (can also be toggled with toggle_frame_counter), which shows the VDP (not V9990) frame number on screen
+cursors (can also be toggled with toggle_cursors), shows which keys (important for games) are pressed
+It also (re)enables the reverse bar widget.
+
+The mode configures the following key bindings, overriding any existing key bindings (note: Mac key bindings are not proper yet...):
+
+keys (PC)	keys (Mac)	function
+F6	(F6)	Load replay from current slot
+F7	(F7)	Open slot select menu
+F8	(F8)	Save replay to current slot
+End	(End)	Advance one frame (advance_frame)
+ScrollLock	(ScrollLock)	Reverse one frame (reverse_frame)
+Note that this mode may change in future releases!
+
+mute
+Mute/unmute all sound output.
+
+usage:
+set mute	Shows the current setting
+set mute on	Mute sound
+set mute off	Unmute sound
+noise
+Controls the amount of Gaussian noise that is added to the video output. A small amount of noise can give a more authentic look to the video output on TFTs. Values can be between 0 and 100, where 0 is no noise and 100 is lots of noise.
+
+This setting is best combined with brightness and contrast: noise creates small random fluctuations in the brightness of pixels. When noise is applied to pure black, it is not possible to make it any darker, so half of the time the noise is ineffective. The same happens with pure white. By setting the brightness slightly above 0 and contrast slightly below 0, you will get a better looking noise effect.
+
+usage:
+set noise	Shows the current setting
+set noise 7	Add a moderate amount of noise
+pause
+Pauses the emulation.
+
+usage:
+set pause	Shows the current setting
+set pause on	Pauses emulation
+set pause off	Unpauses emulation
+Note: Some video settings cannot be applied to an already rendered frame and will therefore not take effect until openMSX is unpaused.
+pause_on_lost_focus
+When this setting is enabled, the emulation will be paused when the openMSX window loses focus.
+
+usage:
+set pause_on_lost_focus	Shows the current setting
+set pause_on_lost_focus on	Emulation will be paused when the openMSX window loses focus
+set pause_on_lost_focus off	Emulation will continue when the openMSX window loses focus (default)
+pointer_hide_delay
+The amount of seconds before the mouse pointer will be automatically hidden after it got shown due to mouse activity. A negative amount means that it will never be hidden, an amount of 0 means that it will be always hidden. By default the pointer is hidden 1 second after the last mouse activity.
+
+usage:
+set pointer_hide_delay	Shows the current setting
+set pointer_hide_delay -1	Never hide the mouse pointer
+set pointer_hide_delay 0	Always hide the mouse pointer
+set pointer_hide_delay 3.4	Hide the mouse pointer after 3.4 seconds of inactivity
+power
+Turn the power of the emulated MSX machine on or off.
+
+usage:
+set power	Shows the current setting
+set power on	Turns the MSX machine on (the default)
+set power off	Turns the MSX machine off
+printerlogfilename
+Sets the file to which the printer logger writes.
+
+usage:
+set printerlogfilename	Shows the current setting
+set printerlogfilename myprinterlog.txt	Log to "myprinterlog.txt"
+print-resolution
+Sets the resolution (in dpi) for the emulated dot-matrix printer.
+
+The emulated printer 'prints' pages as PNG files. This settings determines the resolution of those images.
+
+usage:
+set print-resolution	Shows the current setting
+set print-resolution 600	Sets resolution to 600 dpi
+r800_freq / r800_freq_locked
+These two settings control the R800 clock frequency. See z80_freq / z80_freq_locked for details.
+
+renderer
+Switch to a different video renderer. See the User's Manual for a description of the available renderers.
+
+usage:
+set renderer	Shows the current setting
+set renderer <name>	Switches to the given renderer
+renshaturbo
+Sets the speed of the built-in auto fire on some Japanese MSX models, for example the turboR machines. A value of 0 turns off auto fire, while 100 selects the most rapid auto fire.
+
+usage:
+set renshaturbo	Shows the current renshaturbo value
+set renshaturbo <num>	Sets speed to value <num>
+Note: This setting is only available if the current MSX machine has hardware Rensha Turbo support.
+resampler
+Sets the method to resample the sound of sound chips from their native frequency to the desired output frequency.
+
+usage:
+set resampler	Shows the currently active resampler
+set resampler fast	Sets a fast, but low quality resampler. This uses simple linear interpolation, which can result in very audible aliasing effects in some cases. Although this is a relatively low quality algorithm, it's the algorithm that was used in pre-0.6.3 openMSX versions (and most other MSX emulators).
+set resampler blip	Sets the Blip_Buffer based resampler, which has the best quality per CPU usage ratio (this is the default value).
+set resampler hq	Sets the highest quality resampler, but it also takes the most CPU time. It's based on the libsamplerate algorithm.
+rs232-inputfilename
+Sets the file from which the RS232-tester reads data. Note that the rs232-tester has to be plugged in the msx-rs232 connector for this to become useful. When plugging the tester, this setting needs to point to a valid file.
+
+usage:
+set rs232-inputfilename	Shows the current setting
+set rs232-inputfilename myrs232input.txt	Reads from "myrs232input.txt"
+rs232-outputfilename
+Sets the file to which the RS232-tester writes the data. Note that the rs232-tester has to be plugged in the msx-rs232 connector for this to become useful. When plugging the tester, this setting needs to point to a valid file.
+
+usage:
+set rs232-outputfilename	Shows the current setting
+set rs232-outputfilename myrs232output.txt	Write to "myrs232output.txt"
+rtcmode
+Sets the Real Time Clock mode. Can be either RealTime or EmuTime.
+
+In RealTime mode the MSX clock is always synchronized with the host clock, even when for example emulation is paused for a while or when emulation is run at 200% of real speed.
+
+In EmuTime mode the time is only synchronized with the host clock when openMSX starts. From then on the clock ticks at the same pace as the emulated machine. So when emulation is paused, the clock is paused as well. If emulation is run at 200% speed, the clock also ticks twice as fast.
+
+In EmuTime mode it's not possible for a MSX program to detect whether it's running on a real or on an emulated machine. That's why this is the default mode. On the other hand the RealTime mode might be better if for example you care that timestamps of files written by the emulated MSX machine are in sync with the host machine time.
+
+usage:
+set rtcmode	Shows the current mode
+set rtcmode EmuTime	Set EmuTime mode (the default)
+set rtcmode RealTime	Set RealTime mode
+samples
+Sets the size of the sound mixer buffer. Higher values help against buffer underruns (hickups), but increase the latency of the sound output.
+
+usage:
+set samples	Shows the current setting
+set samples 1024	Use a mixing buffer of 1024 samples
+save_settings_on_exit
+Automatically save the current settings when openMSX exits: execute a save_settings command on exit.
+
+usage:
+set save_settings_on_exit	Show current setting
+set save_settings_on_exit on	Enable auto save
+set save_settings_on_exit off	Disable auto save
+scale_algorithm
+Selects the algorithm used to transform MSX pixels to host pixels. The User's Manual contains more information about scalers.
+
+usage:
+set scale_algorithm	Shows the current setting
+set scale_algorithm simple	Selects the default scale algorithm
+set scale_algorithm hq	Selects the HQ2x/3x/4x scale algorithm
+Note: Not all renderers support all scale algorithms.
+scale_factor
+Selects the scale factor. Scale factor <n> means the typical MSX pixel (MSX resolution 256×212) is mapped on <n> by <n> host pixels. For the moment the possible values are 1 to 4. In the future we may support a wider range or even non-integer values. The User's Manual contains more information about scalers.
+
+usage:
+set scale_factor	Shows the current setting
+set scale_factor <n>	Sets a new scale factor
+Note: Not all renderers support all scale factors.
+scanline
+Sets the amount of scanline effect.
+
+usage:
+set scanline	Shows the current setting
+set scanline <value>	Changes the value
+Note: Some scalers will not render scanlines at all.
+sound_driver
+Select the sound output driver. The list of available sound drivers is platform specific.
+
+usage:
+set sound_driver sdl	Selects the SDL sound driver
+set sound_driver null	Selects the null sound driver (no sound)
+speed
+Sets the emulation speed relative to the speed of a real MSX. Speed 100 means as fast as a real MSX, lower values are slower than real MSX, higher values are faster than real MSX.
+
+usage:
+set speed	Shows current emulation speed
+set speed <num>	Sets new emulation speed
+<soundchip>_balance
+Sets the balance (distribution over the left and right channel) for individual sound chips. It replaces the previously available <soundchip>_mode setting. The range is between -100 (totally left) and 100 (totally right).
+
+usage:
+set <soundchip>_balance	Shows the current setting
+set <soundchip>_balance 0	Plays the output of this chip on both the left and right channel
+set <soundchip>_balance -100	Plays the output of this chip on only the left channel
+set <soundchip>_balance 75	Plays the output of this chip mostly on the right channel, but also a bit on the left channel
+examples:
+set PSG_balance
+set PSG_balance -100
+set FMPAC_balance 0
+<soundchip>_ch<channel>_record
+Sets the filename to which the sound of an individual channel of individual sound chips should be recorded. When this setting is not set, no recording takes place and recording starts as soon as the setting is set. Normally, you would probably prefer to use the record_channels command to set up channel recording instead of this low level setting.
+
+usage:
+set <soundchip>_ch<channel>_record	Shows the current setting
+set <soundchip>_ch<channel>_record filename	Starts recording the sound of the specified chip and channel to the file with name <filename>
+examples:
+set SCC_ch1_record
+set PSG_ch3_record /tmp/PSG_ch3.wav
+<soundchip>_ch<channel>_mute
+Use to mute a specific channel of an individual sound chip. Normally, you would probably prefer to use the mute_channels command to set up channel muting instead of this low level setting.
+
+usage:
+set <soundchip>_ch<channel>_mute	Shows the current setting
+set <soundchip>_ch<channel>_mute on	Mutes the sound of the specified channel of the specified chip
+set <soundchip>_ch<channel>_mute off	Unmutes the sound of the specified channel of the specified chip
+examples:
+set SCC_ch1_mute
+set PSG_ch3_mute on
+set SCC_ch5_mute off
+<soundchip>_detune_frequency
+Sets the frequency of the detune (a random variation in a sound's frequency) effect. It makes a sound fatter and more natural, as if played by a human being.
+
+usage:
+set <soundchip>_detune_frequency	Shows the current setting
+set <soundchip>_detune_frequency <num>	Sets new detune frequency in Hz; 1 is minimum, 100 is maximum
+examples:
+set PSG_detune_frequency
+set PSG_detune_frequency 5 (default)
+Note: For now, this setting is only available for the PSG soundchip.
+Note: It is often more convenient to use the psg_profile command.
+<soundchip>_detune_percent
+Sets the strength of the detune effect. By default it is 0, which means the effect is switched off.
+
+usage:
+set <soundchip>_detune_percent	Shows the current setting
+set <soundchip>_detune_percent <num>	Sets new detune strength; 0 is minimum, 10 is maximum
+examples:
+set PSG_detune_percent
+set PSG_detune_percent 0 (switched off, default)
+set PSG_detune_percent 0.5 (recommended)
+Note: For now, this setting is only available for the PSG soundchip.
+Note: It is often more convenient to use the psg_profile command.
+<soundchip>_vibrato_frequency
+Sets the frequency of the vibrato (a periodic variation in a sound's frequency) effect.
+
+usage:
+set <soundchip>_vibrato_frequency	Shows the current setting
+set <soundchip>_vibrato_frequency <num>	Sets new vibrato frequency in Hz; 1 is minimum, 10 is maximum
+examples:
+set PSG_vibrato_frequency
+set PSG_vibrato_frequency 5 (default)
+Note: For now, this setting is only available for the PSG soundchip.
+Note: It is often more convenient to use the psg_profile command.
+<soundchip>_vibrato_percent
+Sets the strength of the vibrato effect. By default it is 0, which means the effect is switched off.
+
+usage:
+set <soundchip>_vibrato_percent	Shows the current setting
+set <soundchip>_vibrato_percent <num>	Sets new vibrato strength; 0 is minimum, 10 is maximum
+examples:
+set PSG_vibrato_percent
+set PSG_vibrato_percent 0 (switched off, default)
+set PSG_vibrato_percent 1 (recommended)
+Note: For now, this setting is only available for the PSG soundchip.
+Note: It is often more convenient to use the psg_profile command.
+<soundchip>_volume
+Sets the volume for individual sound chips. The overall volume is controlled by the master_volume setting.
+
+usage:
+set <soundchip>_volume	Shows the current setting
+set <soundchip>_volume <num>	Sets new volume; 0 is off, 100 is maximum
+examples:
+set PSG_volume
+set PSG_volume 60
+set "FMPAC_volume" 50
+throttle
+Sets throttle mode. In throttle mode the emulator tries to run at the specified speed relative to a real MSX (see speed command). When throttling is turned off the emulator runs as fast as possible. The speed may be limited to the framerate of your monitor (e.g. 60fps) due to how the OpenGL driver works, when using the (default) SDLGL-PP renderer. To increase the speed, set the maxframeskip setting to a high value (e.g. 100).
+
+usage:
+set throttle	Shows the current setting
+set throttle on	Turn throttle mode on (normal operation)
+set throttle off	Turn throttle mode off (fast forward)
+too_fast_vram_access
+How should software that accesses the VDP-VRAM too fast be emulated? Most existing MSX software should not access VRAM too fast, and in that case this setting has no effect. But you may want to change it when you e.g. emulate an overclocked Z80 (see z80_freq).
+
+usage:
+set too_fast_vram_access	Shows the current setting
+set too_fast_vram_access real	Accessing the VRAM too fast results in dropped VRAM accesses, just like on a real machine.
+set too_fast_vram_access ignore	All VRAM accesses are executed, so timing of VRAM access is ignored.
+too_fast_vram_access_callback
+Selects the Tcl procedure to be called when a too-fast-VRAM-access (read or write) has been detected. This is useful for debugging MSX programs that show certain kinds of VRAM corruption, especially on MSX1.
+
+By default this setting is empty, which means that nothing is done when a too-fast-VRAM-access is detected. We ship a few example procedures called warn_too_fast_vram_access and debug_too_fast_vram_access which respectively print a warning or break CPU emulation when this condition occurs. You can find the source code for these procedures in scripts/callbackprocs.tcl. Feel free to write your own procedure that does exactly what you need.
+
+usage:
+set VDP.too_fast_vram_access_callback	Shows the currently installed callback
+set VDP.too_fast_vram_access_callback warn_too_fast_vram_access	Print warning when too fast VRAM access is detected
+set VDP.too_fast_vram_access_callback debug_too_fast_vram_access	Print warning and also break emulation right after the Z80 instruction that triggered this callback
+set VDP.too_fast_vram_access_callback my_custom_callback_handler	Install a custom callback handler
+set VDP.too_fast_vram_access_callback ""	Remove any installed callback handler
+touchpad_transform_matrix
+Specify a 2×3 transformation matrix that maps host mouse coordinates to MSX touchpad coordinates. To get the following coordinate transformation:
+
+        | a b c |   | host-X |   | touchpad-X |
+        | d e f | × | host-Y | = | touchpad-Y |
+                    |    1   |
+  
+Use this command:
+
+        set touchpad_transform_matrix {{a b c} {d e f}}
+  
+usage:
+set touchpad_transform_matrix	Shows the current value
+set touchpad_transform_matrix {{256 0 0} {0 256 0}}	This is the default, map the full host window to 256×256 touchpad input
+set touchpad_transform_matrix {{320 0 -64} {0 240 -14}}	Attempt to map touch coordinates to corresponding MSX pixel coordinates.
+turborpause
+Controls the pause key on a MSX turboR machine.
+
+usage:
+set turborpause	Shows the current setting
+set turborpause on	Activate the pause key
+set turborpause off	Deactivate the pause key
+Note: If you use this setting often, it may be useful to bind it to a key on your PC keyboard. See the bind and toggle commands.
+umr_callback
+Selects the Tcl procedure to be called when an Uninitialized Memory Read has been detected. This is useful for debugging MSX programs: uninitialized memory is not guaranteed to have any particular value, so reading it is most likely a bug.
+
+By default this setting is empty, which means that nothing is done when an Uninitialized Memory Read is detected. We ship a useful procedure called umrcallback which logs all UMRs. You can activate it with set umr_callback umrcallback. You can find the source code for this procedure in scripts/callbackprocs.tcl.
+
+usage:
+set umr_callback	Shows the current UMR callback setting
+set umr_callback umrcallback	Sets callback proc to umrcallback
+vdpcmdinprogress_callback
+Selects the Tcl procedure to be called when a write to a VDP command engine register is detected while there is still a VDP command in progress. Often this is an indication of a bug in the running MSX program. Note that writes to VDP register R#44 with a command in progress are normal behaviour, so the callback is not triggered for such writes.
+
+By default this setting is empty, which means that nothing is done when a suspicious VDP command engine write is detected. We ship an example proc called vdpcmdinprogresscallback which simply logs all occurrences. You can activate it with set vdpcmdinprogress_callback vdpcmdinprogresscallback. You can find the source code for this proc in scripts/callbackprocs.tcl. Feel free to write your own proc that does exactly what you need. For example it might be a good idea to execute debug break in your callback, so that you can easily examine what code triggered this write.
+
+usage:
+set vdpcmdinprogress_callback	Shows the current value. Default is "" (meaning no action)
+set vdpcmdinprogress_callback vdpcmdinprogresscallback	Sets callback to vdpcmdinprogresscallback
+vdpcmdtrace
+Enable/disable VDP command tracing. When enabled, every VDP command is logged on stdout. This is useful when debugging MSX programs that use the VDP command engine.
+
+usage:
+set vdpcmdtrace	Shows the current setting
+set vdpcmdtrace on	Enables VDP command tracing
+set vdpcmdtrace off	Disables VDP command tracing
+videosource
+Switch between video sources: MSX (V99x8, default when no Video 9000 is available), GFX9000 (V9990), Video9000 (V9990 superimposed on top of V99x8, default if available) and Laserdisc (for Palcom machines). There can be even more video sources, e.g. due to cartridges with a built in VDP like the Neos MA-20(V).
+
+usage:
+set videosource	Shows the current setting
+set videosource MSX	Switch to normal MSX screen
+set videosource GFX9000	Switch to GFX9000 screen
+Note: This setting is only available if multiple videosources are present.
+v9990cmdtrace
+Enable/disable V9990 command tracing. This is the V9990 equivalent of vdpcmdtrace.
+
+usage:
+set v9990cmdtrace	Shows the current setting
+set v9990cmdtrace on	Enables V9990 command tracing
+set v9990cmdtrace off	Disables V9990 command tracing
+Note: This setting is only available if the gfx9000 or video9000 extension is present.
+z80_freq / z80_freq_locked
+These two settings control the Z80 clock frequency. When z80_freq_locked is true the emulated Z80 runs at the normal 3.579545 MHz (or optionally 5.369318 MHz on some machines). When z80_freq_locked is false the value of z80_freq is taken as the Z80 clock frequency.
+
+WARNING: be careful when changing these settings. When saving the settings in which a different clock is activated, this will be applied for all machines, as these are global settings. Some software (like demos) may stop working properly with a changed CPU clock frequency. Specifically, using a value (just) below the normal value may cause problems loading CAS images, as these are converted to a high baud rate WAV file internally and when the MSX becomes slower it cannot handle that high baud rate.
+
+examples:
+Overclock Z80 to 14 MHz:
+set z80_freq 14318180
+set z80_freq_locked false
+
+F8 switches between 3.5 MHz and 7 MHz:
+set Z80_freq 7159090
+bind F8 "toggle z80_freq_locked"
+other settings
+Like with the commands, there are also some specialized settings, for which we only list a very brief overview. As always execute "help setting <setting-name>" to get a more detailed description of the setting.
+
+fast_cas_load_hack_enabled	Enable a hack that lets you quickly load CAS files, without having openMSX convert them to WAV
+The source code of all these scripts is located in share/scripts directory. Feel free to inspect these scripts and modify them to suit your needs.

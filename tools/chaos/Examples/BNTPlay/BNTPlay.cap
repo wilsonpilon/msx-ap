@@ -1,0 +1,32 @@
+[PROJECT FILES]
+.Bntplay.asm
+.Compiled\BNTPlay.bin
+1
+.Ml_bntpl.asm
+.Compiled\Ml_bntpl.bin
+1
+.Bntpmacr.asm
+.Compiled\Bntpmacr.bin
+0
+.Ml_macnt.asm
+.Compiled\Ml_macnt.bin
+0
+[PROJECT MANAGER]
+0
+12
+171
+694
+pnlDockLeft
+[CMP LIST]
+0
+0
+[CMP FORM]
+[CHILD FORMS]
+.Bntplay.asm
+0
+0
+0
+974
+701
+7264
+0

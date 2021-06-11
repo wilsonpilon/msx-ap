@@ -1,0 +1,32 @@
+.Z80
+
+CR      EQU 13                  ;Carriage Return
+LF      EQU 10                  ;Line Feed
+
+PUBLIC SND_CR
+
+CSEG
+
+;-------------------------------------------------------------------------;
+; Esta rotina apenas envia um retorno de carro e um avanco de linha para  ;
+; a tela, usando a chamada 02 do BDOS, rolando a tela como no MSX-DOS     ;
+;                                                                         ;
+;-------------------------------------------------------------------------;
+SND_CR:
+        push af                 ;Salva Registradores
+        push bc
+        push de
+        push hl
+        ld c,02h                ;
+        ld e,CR                 ;Imprime CD
+        call 0005h              ;
+        ld e,LF                 ;Imprime LF
+        call 0005h              ;
+        pop hl                  ;Recupera Registradores
+        pop de
+        pop bc
+        pop af
+        ret
+
+END
+

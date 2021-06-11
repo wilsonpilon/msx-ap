@@ -1,0 +1,81 @@
+:BASE ChaosASM_3.hlp
+:TITLE Chaos Assembler 3 --- Help File
+1 Introduction
+2 About=About@ChaosASM_3.hlp
+2 A little bit history=A_little_bit_history@ChaosASM_3.hlp
+2 Why Chaos Assembler 3?=Why_Chaos_Assembler_3?@ChaosASM_3.hlp
+2 Disclaimer=Disclaimer@ChaosASM_3.hlp
+1 Overview
+2 IDE, Wrapper, Compiler, HELP!=IDE,_Wrapper,_Compiler,_HELP@ChaosASM_3.hlp
+2 Main items
+3 The main window=Themainwindow@ChaosASM_3.hlp
+3 The edit child=Themainwindow2@ChaosASM_3.hlp
+1 Using Chaos Assembler 3
+2 First contact=Firstcontact@ChaosASM_3.hlp
+2 The settings screen
+3 In general=Ingeneral2@ChaosASM_3.hlp
+3 General tab=General@ChaosASM_3.hlp
+3 Assembler tab=Assembler@ChaosASM_3.hlp
+3 Editor tab=Editor@ChaosASM_3.hlp
+3 Default header tab=Defaultheader@ChaosASM_3.hlp
+3 Code Templates tab=CodeTemplates@ChaosASM_3.hlp
+2 Main window
+3 Main menu
+4 File menu=Filemenu@ChaosASM_3.hlp
+4 Edit menu=Editmenu@ChaosASM_3.hlp
+4 View menu=Viewmenu@ChaosASM_3.hlp
+4 Search menu=Searchmenu@ChaosASM_3.hlp
+4 Project menu=Projectmenu@ChaosASM_3.hlp
+4 Template menu=Templatemenu@ChaosASM_3.hlp
+4 Extra menu=Extramenu@ChaosASM_3.hlp
+4 Window menu=WindowMenu@ChaosASM_3.hlp
+3 Toolbars
+4 Standard toolbar=Standard@ChaosASM_3.hlp
+4 Edit toolbar=Edit@ChaosASM_3.hlp
+4 Window toolbar=Window@ChaosASM_3.hlp
+2 Projects
+3 What is a project?=Whatisaproject?@ChaosASM_3.hlp
+3 CA3 and projects=Projectdefinition@ChaosASM_3.hlp
+3 The project manager=Theprojectmanager@ChaosASM_3.hlp
+2 Compiling files and Building projects
+3 The concept=CompilingfilesandBuildingproje@ChaosASM_3.hlp
+3 Compiling files=Compilingfiles@ChaosASM_3.hlp
+3 Building projects=Buildingprojects@ChaosASM_3.hlp
+2 Extra's
+3 The image viewer=Theimageviewer@ChaosASM_3.hlp
+3 The palette editor=Thepaletteeditor@ChaosASM_3.hlp
+3 The sprite editor=Thespriteeditor@ChaosASM_3.hlp
+2 Editing sources
+3 MACRO'S.ASM ?=Justtypeaway@ChaosASM_3.hlp
+3 Code completion=Codecompletion@ChaosASM_3.hlp
+3 Code tool tips=Codetooltips@ChaosASM_3.hlp
+3 Other tool tips=Othertooltips@ChaosASM_3.hlp
+3 Math evaluation=Mathevaluation@ChaosASM_3.hlp
+3 In general=Ingeneral@ChaosASM_3.hlp
+1 Other
+2 Trouble shooting=Troubleshooting@ChaosASM_3.hlp
+2 The TeddyWareZ recovery system=TheTeddyWareZrecoverysystem2@ChaosASM_3.hlp
+2 Tips & Hints=Tips&Hints2@ChaosASM_3.hlp
+2 How to ...?=Howto...?@ChaosASM_3.hlp
+2 Key combinations=Keycombinations@ChaosASM_3.hlp
+2 Support=Support@ChaosASM_3.hlp
+1 Z80 Information
+2 Instruction set=Instructionset@ChaosASM_3.hlp
+2 Instruction timings=Instructiontimings@ChaosASM_3.hlp
+2 Complete opcode list=Completeopcodelist@ChaosASM_3.hlp
+1 TASM Documentation
+2 About TASM=About_TASM@ChaosASM_3.hlp
+2 Table of contents=Table_of_contents@ChaosASM_3.hlp
+2 Introduction=Introduction@ChaosASM_3.hlp
+2 Shareware=Shareware@ChaosASM_3.hlp
+2 Invocation=Invocation@ChaosASM_3.hlp
+2 Environment variables=Environmentvariables@ChaosASM_3.hlp
+2 Exit Codes=ExitCodes@ChaosASM_3.hlp
+2 Source file format=Sourcefileformat@ChaosASM_3.hlp
+2 Expressions=Expressions@ChaosASM_3.hlp
+2 Assembler Directives=AssemblerDirectives@ChaosASM_3.hlp
+2 Object file formats=Objectfileformats@ChaosASM_3.hlp
+2 Listing file format=Listingfileformat@ChaosASM_3.hlp
+2 PROM Programming=PROMProgramming@ChaosASM_3.hlp
+2 Error messages=Errormessages@ChaosASM_3.hlp
+2 Limitations=Limitations@ChaosASM_3.hlp

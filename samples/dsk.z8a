@@ -1,0 +1,1403 @@
+   
+; *********************
+; *    DSK EXAMPLE    *
+; * (c) Ramones 2007  *
+; *********************
+
+
+; **** CONSTANTES ****
+
+
+
+SLTWRK:					equ		0FD09h
+BOTTOM:					equ		0FC48h
+HIMEM:					equ		0FC4Ah
+HSTKE:					equ		0FEDAh
+HRUNC:					equ		0FECBh
+HCLEAR:					equ		0FED0h
+ENASLT:					equ		024h
+RSLREG:					equ		0138h
+EXPTBL:					equ		0FCC1h ; Bios Slot / Expansion Slot
+HPHYD:					equ		0FFA7h
+CHGMOD:					equ		05Fh
+CHGET:					equ		09Fh
+KILBUF:					equ		0156h
+
+PTRFLG:					equ		0F416h
+PTRFIL:					equ		0F864h
+OUTDO:					equ		18h
+FORCLR:					equ		0F3E9h
+BAKCLR:					equ		0F3EAh
+BDRCLR:					equ		0F3EBh
+LINL40:					equ		0F3AEh
+CLIKSW:					equ		0F3DBh
+CSRY:					equ		0F3DCh
+CSRX:					equ		0F3DDh
+
+
+BDOSCALL:				equ		0F37Dh	; Use 05h in MSXDOS or MSXDOS2
+
+; *** DOS SYSTEM VARS **
+
+ERRADR:					equ		0F323h					; Error en DOS1
+ABTADR:					equ		0F1E5h					; Abort
+
+
+;  *** DOS1 CALLS *** 
+
+_STROUT:				equ		09h					
+_FOPEN:					equ		0Fh					
+_FCLOSE:				equ		010h
+_FMAKE:					equ		016h
+_SETDTA:				equ		01Ah
+_WRBLK:					equ		026h
+_RDBLK:					equ		027h
+
+;  *** DOS2 CALLS ***
+
+_OPEN:					equ		043h
+_CREATE:				equ		044h
+_CLOSE:					equ		045h
+_READ:					equ		048h
+_WRITE:					equ		049h
+_SEEK:					equ		04Ah
+
+_DEFAB:					equ		063h
+_DEFER:					equ		064h
+
+
+_DOSVER:				equ		06Fh
+
+
+
+; *** INITROM ***
+
+
+						org		04000h
+						db		041h,042h
+						dw		initmain
+						ds		12,0
+						
+						
+; *** SLOT ROUTINES ***
+
+; -----------------------
+; SEARCH_SLOTSET
+; Posiciona en pagina 2
+; Nuestro ROM.
+; -----------------------
+
+search_slotset:
+						
+						call	search_slot
+						ld		(slotvar),a
+						jp		ENASLT
+
+; -----------------------
+; SEARCH_SLOT
+; Busca slot de nuestro rom
+; -----------------------
+
+search_slot:
+
+						call	RSLREG
+						rrca
+						rrca
+						and		3
+						ld		c,a
+						ld		b,0
+						ld		hl,0FCC1h
+						add		hl,bc
+						ld		a,(hl)
+						and		080h
+						or		c
+						ld		c,a
+						inc		hl
+						inc		hl
+						inc		hl
+						inc		hl
+						ld		a,(hl)
+						and		0Ch
+						or		c
+						ld		h,080h
+						
+						ret
+						
+; *** INICIALIZACION DEL GANCHO ***
+
+initmaindsk:
+
+						di
+						push	hl
+						push	de
+						push	bc
+						push	af
+						
+						call	search_slot
+						ld		h,a
+						ld		l,0F7h
+						ld		(HSTKE),hl
+						ld		hl,initmaindskret
+						ld		(HSTKE+2),hl
+						ld		a,0C9h
+						ld		(HSTKE+4),a
+
+						
+						pop		af
+						pop		bc
+						pop		de
+						pop		hl
+						
+						ret
+						
+						
+						
+; *** INIT ***						
+						
+initmain:
+						di
+						jp		initmaindsk
+				
+				
+; *** INICIALIZACION DESPUES DE LA BUSQUEDA DEL DISCO ***
+						
+										
+initmaindskret:
+						
+						
+						di
+						push	hl
+						push	bc
+						push	de			; for ret to OS
+						push	af
+						
+						ld		b,5
+						ld		a,0C9h
+						ld		hl,HSTKE
+initmaindskretnohook:						
+						ld		(hl),a
+						inc		hl
+						djnz	initmaindskretnohook
+
+
+						; InitScreen
+
+						; Screen 0 colores 15,4,4
+
+						ld		hl,0404h
+						ld		(BAKCLR),hl
+						ld		a,15
+						ld		(FORCLR),a	
+						
+						; 40  columnas
+						ld		a,39
+						ld		(LINL40),a
+
+						xor		a
+						ld		hl,0
+						ld		(PTRFLG),a				; Escritura en pantalla
+						ld		(PTRFIL),hl
+						ld		(CLIKSW),a				; Fuera key click
+						call	CHGMOD
+						
+						call	printlogo
+						
+						
+						; Check if disk found
+						
+						ld		a,(HPHYD)
+						cp		0C9h
+						jr		nz,initmaindskfound
+						
+
+						; No se encuentra la disquetera, mensajito y adios
+						
+						ld		de,(locatetxtdsknotfound)
+						ld		hl,txtdsknotfound
+						call	print
+						
+endprogcommon:						
+						call	KILBUF
+						call	CHGET
+						
+						pop		af
+						pop		de
+						pop		bc
+						pop		hl
+						ret
+						
+						
+						
+initmaindskfound:
+						; Tenemos disco
+
+
+						;ld		sp,initmem				; Posicionamos la pila, pero solo 
+														; si fuese una ROM que no devuelve
+														; el control al SO.
+
+
+
+
+						; initvar
+						ld		hl,initmem
+						ld		de,initmem+1
+						ld		bc,endmem - initmem
+						ld		(hl),0
+						ldir
+
+						
+						call	search_slotset
+
+
+
+						ld		a,1
+						ld		(dskfound),a					; DSK found
+						
+						
+						call	checkdos
+						call	printdosver
+						
+						
+						call	initdskerror
+						
+						
+						ld		de,(locatetxtread)
+						ld		hl,txtread
+						call	print
+						
+						call	KILBUF
+						call	CHGET
+						
+						ld		de,(locatetxtsearch)
+						ld		hl,txtsearch
+						call	print
+						
+						
+						
+						
+						ld		hl,FILEXAMPLE
+						call	checkfile
+						
+						
+				
+						
+						push	af
+						ld		de,(locatetxtfound)
+						ld		hl,txtnotfound
+						jr		c,filenotfound
+						ld		hl,txtfound
+filenotfound:						
+						call	print
+						
+						
+						pop		af
+						jr		c,filewrite
+
+						; Leemos el contenido de EXAMPLE.TXT
+fileread:
+
+
+						ld		bc,(fsizefile)	 ; Contenido total, parte baja, fichero peque
+						ld		iy,dma
+						ld		ix,FILEXAMPLE
+						ld		hl,0			
+						ld		de,0
+						xor		a
+						call	readfile
+						ld		de,(locatetxtreaderror)
+						jr		c,filereaderror
+						
+						
+						ld		hl,dma
+						call	print
+						jr		filewrite
+						
+filereaderror:						
+						ld		hl,txtreaderror
+						call	print
+						
+
+						
+filewrite:
+						call	closefile
+						
+						
+						ld		de,(locatetxtwrite)
+						ld		hl,txtwrite
+						call	print
+						
+						call	KILBUF
+						call	CHGET
+						
+						; Escribimos la misma cadena en EXAMPLE2
+						
+						; DMA en DOS1 no puede estar en la zona 04000h-07FFFh
+						
+						
+						ld		hl,WRITEDATA
+						ld		de,dma
+						ld		bc,25
+						ldir
+						
+						
+						ld		bc,25			; bytes to write
+						ld		iy,dma
+						ld		ix,FILESAVE
+						ld		hl,0
+						ld		de,0
+						xor		a
+						call	writefile
+						jr		c,filewriteerror
+						
+						
+						; Final Feliz
+						
+						call	closefile		; Obligado en la escritura o no escribe nada
+						
+						
+						ld		de,(locatetxtwriteerror)
+						ld		hl,txtwriteok
+						call	print
+
+
+						jr		endprog
+
+filewriteerror:
+						
+						ld		de,(locatetxtwriteerror)
+						ld		hl,txtwriteerror
+						call	print
+						
+endprog:
+						ld		de,(locatetxtend)
+						ld		hl,txtend
+						call	print
+						
+						
+						jp		endprogcommon
+						
+
+
+				
+
+
+; *** BDOS ROUTINES ***
+
+
+; -------------------------
+;  BDOS
+;  bdos 
+;  Cy if error
+;  ------------------------
+
+bdos:
+						push	af
+						xor		a
+						ld		(errordskvar),a
+						pop		af
+						ld		(savesperror),sp
+						
+						call	BDOSCALL
+						or		a
+						ret		z
+						scf
+						ret		
+
+
+; ----------------------------
+; PRINTBDOS
+; Impresion de BDOS
+; DE : Puntero a texto DOS
+; ---------------------------
+
+printbdos:
+						ld		c,_STROUT
+						jp		bdos
+
+; -----------------------------------------------
+; ERROR
+; print error
+; call ERRORTXT and set DE pointer to error text
+; -----------------------------------------------
+
+error:
+						ld		de,error_txt
+errortxt:
+						ld		c,_STROUT
+						call	bdos
+						jp		exit
+				
+				
+; -----------------------------
+; CHECK DOS
+; check operating system
+; ------------------------------
+
+checkdos:
+						ld		c,_DOSVER
+						call	bdos			; Send DOSVER command to dos
+						ld		a,b
+						ld		(dosversion),a	; Save dos version
+						ret
+				
+				
+				
+; *** DOS 1 ROUTINES *** 
+				
+; ----------------
+; MAKEFCB
+; Prepare NEW FCB
+; ---------------
+
+makefcb:
+						ld		hl,fcb
+						ld		de,fcb+1
+						ld		(hl),0
+						ld		bc,37
+						ldir
+						ret
+
+; -------------
+; BUILDFCB
+; HL = Pointer to namefile string
+; ----------------
+
+buildfcb:
+						ld		de,fname
+						ld		bc,11
+						ldir
+						ret
+
+; ---------------
+; OPEN FCB FILE
+; C if error
+; ---------------
+
+open:
+						ld		de,fcb
+						ld		c,_FOPEN						
+						call	bdos
+						ret		c
+				
+preparefcb:				
+						ld		ix,fcb
+						ld		a,1
+						ld		(ix+14),a
+						xor		a
+						ld		(ix+15),a
+						ld		(ix+33),0
+						ld		(ix+34),0
+						ld		(ix+35),0
+						ld		(ix+36),0
+						ret
+
+; --------------
+; SEEK
+; DEHL = Pointer
+; --------------
+
+seek:
+						ld		ix,fcb
+						ld		(ix+33),l
+						ld		(ix+34),h
+						ld		(ix+35),e
+						ld		(ix+36),d
+						ret
+
+; ------------
+; SETDMA
+; DE = Buffer
+; ------------
+
+setdma:
+						ld		c,_SETDTA
+						jp		bdos
+
+; -------------------------------------------------------
+; READ
+; HL Bytes to read from opened FCB, with the pointer ready
+; -------------------------------------------------------
+
+read:
+						ld		de,fcb
+						ld		c,_RDBLK
+						jp		bdos
+
+
+; -----------------------------------------------------------
+; WRITE
+; HL Bytes to write in opened FCB file, with the pointer ready
+; ------------------------------------------------------------
+
+write:
+						ld		de,fcb
+						ld		c,_WRBLK
+						jp		bdos
+						
+
+
+; ----------------------
+; CREATE
+; Create NEW file
+; -----------------
+
+create:
+						ld		de,fcb
+						ld		c,_FMAKE
+						call	bdos
+						ret		c
+						jp		preparefcb				; Preparamos el FCB para record size 1 y seek 0
+
+
+
+; ----------------
+; CLOSE
+; CLOSE FCB FILE
+; ----------------
+
+close:							
+
+						ld		de,fcb
+						ld		c,_FCLOSE
+						jp		bdos
+
+; *** DOS 2 ROUTINES ***				
+		
+		
+; -------------------------------
+; SEEK2
+; DEHL: Pointer
+; Seek DOS2
+; file handle file
+; -------------------------------
+
+seek2:	
+						ld		a,(filehandle)
+						ld		b,a
+						xor		a
+						ld		c,_SEEK
+						call	bdos
+						ret
+		
+		
+; --------------------------------
+; OPENDOS2
+; Open file in filenamedos2
+; And save filehandle
+; ----------------------------------
+		
+open2:
+						ld		de,filenamedos2
+						xor		a
+						ld		b,0
+						ld		c,_OPEN		; Open file DOS2
+						call	bdos
+						ret		c
+						
+						ld		a,b
+						ld		(filehandle),a
+
+						; Check File Size
+						
+						ld		a,2
+						ld		de,0
+						ld		hl,0	; Seek
+						ld		c,_SEEK
+						call	bdos
+						
+						ld		(fsizefile),hl
+						ld		(fsizefile+2),de				
+						
+						
+						
+						ld		de,0
+						ld		hl,0
+						jp		seek2
+
+				
+		
+; ---------------------------
+; READ2
+; Read HL Bytes and
+; push in DE from
+; Filehandle file
+; -----------------------------
+		
+read2:				
+						ld		a,(filehandle)
+						ld		b,a
+						xor		a
+						ld		c,_READ
+						jp		bdos
+				
+				
+; ------------------
+; WRITE2
+; Write HL Bytes and
+; from in DE in
+; filehandle file
+; ------------------				
+				
+write2:
+
+						ld		a,(filehandle)
+						ld		b,a
+						xor		a
+						ld		c,_WRITE
+						jp		bdos
+						
+						
+; ---------------
+; CREATE2
+; Create new file 
+; DOS2
+; ----------------						
+	
+create2:
+
+						ld		de,filenamedos2
+						xor		a
+						ld		b,0
+						ld		c,_CREATE		; Open file DOS2
+						call	bdos
+						ret		c
+						ld		a,b
+						ld		(filehandle),a
+						ret
+						
+						
+										
+; --------------------------------
+; CLOSE2
+; Close file DOS2
+; --------------------------------
+				
+				
+close2:
+						ld		a,(filehandle)
+						ld		b,a
+						ld		c,_CLOSE
+						jp		bdos		
+
+
+; *** GENERIC FUNCIONS ***
+
+; --------------------------------------------
+; PREPAREFILE
+; HL : Point to name in DOS2 format
+; --------------------------------------------
+
+preparefile:
+
+						ld		a,(dosversion)
+						cp		2
+						jr		nc,preparefiledos2
+				
+						; DOS 1
+						; Name
+						push	hl
+						call	makefcb				
+						ld		hl,fname
+						ld		de,fname+1
+						ld		(hl),32
+						ld		bc,10
+						ldir	
+						
+						pop		hl
+				
+preparefiledos1:				
+						ld		de,fname
+preparefiledos10:				
+						ld		a,(hl)
+						inc		hl
+						cp		'.'
+						jr		z,preparefiledos1ext
+						ld		(de),a
+				
+						inc		de
+						jr		preparefiledos10
+				
+				
+preparefiledos1ext:
+						ld		de,fext
+				
+preparefiledos1ext0:				
+				
+						ld		a,(hl)
+						ld		(de),a
+						inc		hl
+						inc		de
+						or		a
+						jr		nz,preparefiledos1ext0
+						ret
+				
+				
+				
+						; DOS2
+preparefiledos2:
+						ld		de,filenamedos2
+				
+preparefiledos20:				
+						ld		a,(hl)
+						ld		(de),a
+						inc		hl
+						inc		de
+						or		a
+						jr		nz,preparefiledos20
+						ret
+				
+
+
+; --------------------------------------------
+; READFILE
+; IX: File Name
+; IY : Dma
+; DEHL: Seek Value
+; BC: Data to read
+; File Handle, file open (dos2)
+; FCB prepared in DOS1
+; A : 0 Not Seek
+; --------------------------------------------
+
+readfile:
+			
+						push	af
+						
+						
+						ld		a,(fileopen)
+						or		a
+						jr		nz,readfileopen
+
+						
+
+						push	bc
+						
+						push	de
+						push	hl
+						push	iy
+						
+						push	ix
+						pop		hl
+						
+						
+						call	preparefile
+						
+						pop		iy
+						pop		hl
+						pop		de
+
+						
+						pop		bc
+						
+						ld		a,(dosversion)
+						cp		2
+						jr		nc,readfiledos2
+					
+						; Open DOS 1
+						
+						push	bc
+						
+						push	de
+						push	hl
+						
+						push	iy
+						
+
+						
+						
+						
+						; open file
+						
+						call	open
+						
+						pop		de
+						
+						
+						jr		c,readfileerr0
+
+						call	setdma
+
+						
+						
+						pop		hl
+						pop		de
+						pop		bc
+						
+						ld		a,1
+						ld		(fileopen),a
+						
+
+
+						jr		readfileopen0
+			
+readfileerr0:
+				
+			
+						pop		hl
+						pop		de
+						pop		bc
+						pop		af
+						scf
+						ret
+			
+
+						; DOS2
+readfiledos2:
+						push	bc
+						
+						push	de
+						push	hl
+						
+						push	iy
+						
+						call	open2
+						
+						pop		iy
+						jr		c,readfileerr0
+
+						pop		hl
+						pop		de
+						pop		bc
+						
+						ld		a,1
+						ld		(fileopen),a
+						jr		readfileopendos2
+				
+			
+
+						; Read File opened
+readfileopen:				
+						ld		a,(dosversion)
+						cp		2
+						jr		nc,readfileopendos2dma
+				
+				
+readfileopendma:
+				
+						push	hl
+						push	de
+						
+						push	iy
+						pop		de
+						
+						push	bc
+						call	setdma
+						pop		bc
+						
+						pop		de
+						pop		hl
+				
+				
+				
+				
+
+readfileopen0:
+						pop		af
+						or		a
+						push	bc
+						call	nz,seek
+						pop		bc
+						
+						ld		h,b
+						ld		l,c
+						jp		read
+				
+						; DOS2
+				
+readfileopendos2dma:				
+				
+readfileopendos2:
+				
+						pop		af
+						
+						push	bc
+						push	iy
+						or		a
+						call	nz,seek2
+						pop		de
+						pop		hl
+						jp		read2
+				
+				
+				
+; --------------------------------------------
+; WRITEFILE
+; IX: File Name
+; IY : Dma
+; DEHL: Seek Value
+; BC: Data to write
+; File Handle, file open (dos2)
+; FCB prepared in DOS1
+; A : 0 Not Seek
+; --------------------------------------------
+
+writefile:
+			
+						push	af
+						
+						
+						ld		a,(fileopen)
+						or		a
+						jr		nz,writefileopen
+
+						
+
+						push	bc
+						
+						push	de
+						push	hl
+						push	iy
+						
+						push	ix
+						pop		hl
+						
+						
+						call	preparefile
+						
+						pop		iy
+						pop		hl
+						pop		de
+
+						
+						pop		bc
+						
+						ld		a,(dosversion)
+						cp		2
+						jr		nc,writefiledos2
+					
+						; Open DOS 1
+						
+						push	bc
+						
+						push	de
+						push	hl
+						
+						push	iy
+						
+
+						
+						
+						
+						; open file
+						
+						call	create
+						
+						pop		de
+						
+						
+						jr		c,writefileerr0
+
+						call	setdma
+
+						
+						
+						pop		hl
+						pop		de
+						pop		bc
+						
+						ld		a,1
+						ld		(fileopen),a
+						
+
+
+						jr		writefileopen0
+			
+writefileerr0:
+				
+			
+						pop		hl
+						pop		de
+						pop		bc
+						pop		af
+						scf
+						ret
+			
+
+						; DOS2
+writefiledos2:
+						push	bc
+						
+						push	de
+						push	hl
+						
+						push	iy
+						
+						call	create2
+						
+						pop		iy
+						jr		c,writefileerr0
+
+						pop		hl
+						pop		de
+						pop		bc
+						
+						ld		a,1
+						ld		(fileopen),a
+						jr		writefileopendos2
+				
+			
+
+						; Write File opened
+writefileopen:				
+						ld		a,(dosversion)
+						cp		2
+						jr		nc,writefileopendos2dma
+				
+				
+writefileopendma:
+				
+						push	hl
+						push	de
+						
+						push	iy
+						pop		de
+						
+						push	bc
+						call	setdma
+						pop		bc
+						
+						pop		de
+						pop		hl
+				
+				
+				
+				
+
+writefileopen0:
+						pop		af
+						or		a
+						push	bc
+						call	nz,seek
+						pop		bc
+						
+						ld		h,b
+						ld		l,c
+						jp		write
+				
+						; DOS2
+				
+writefileopendos2dma:				
+				
+writefileopendos2:
+				
+						pop		af
+						
+						push	bc
+						push	iy
+						or		a
+						call	nz,seek2
+						pop		de
+						pop		hl
+						jp		write2
+				
+
+; ------------------------------------
+; CLOSEFILE
+; Close the file open (if open)
+; -----------------------------------
+
+closefile:
+
+						ld		a,(fileopen)
+						or		a
+						ret		z
+						xor		a
+						ld		(fileopen),a
+						
+						ld		a,(dosversion)
+						cp		2
+						jp		nc,close2
+						
+						jp		close
+				
+			
+				
+; ---------------------
+; CHECK FILE
+; CHECK IF FILE EXIST
+; HL : Name
+; ---------------------
+
+checkfile:
+
+						call	preparefile
+
+						ld		a,(dosversion)
+						cp		2
+						jp		nc,checkfile2 	; DOS2 mode
+					
+						call	open
+						ret		c
+						jp		close
+				
+checkfile2:										; DOS2 Open
+						
+						call	open2
+						ret		c
+						jp		close2
+				
+			
+; -----------------------------
+; INITDSKERROR
+; Inicializa la rutina de error
+; Segun sistema operativo
+; -----------------------------				
+						
+initdskerror:				
+						
+						ld		hl,dskerrordos1
+						ld		de,errorhandle
+						ld		bc,dskerrordos1end-dskerrordos1
+						ldir
+						ld		hl,errorhandle
+						ld		(errorhandlejp),hl
+						ld		hl,errorhandlejp
+						ld		(ERRADR),hl
+						
+						; Y para el Abort
+						
+						ld		hl,dskabortdos1
+						ld		de,aborthandle
+						ld		bc,dskabortdos1end-dskabortdos1
+						ldir
+						
+						ld		hl,aborthandle
+						ld		(aborthandlejp),hl
+						ld		hl,aborthandlejp
+						ld		(ERRADR+2),hl
+						
+						ld		a,(dosversion)
+						cp		2
+						ret		nc
+						
+						ld		hl,aborthandle
+						ld		(ABTADR+1),hl
+						ret
+						
+				
+; -----------------
+; DSKERRORDOS1
+; Rutina de error DOS1
+; --------------------				
+				
+dskerrordos1:
+						
+						ld		c,2				; Llama a la rutina de abort
+						scf
+						ret
+					
+dskerrordos1end:	
+
+; -------------------------------------
+; DSKABORTDOS1
+; Abort Routine
+; --------------------------------------
+
+dskabortdos1:
+						; Reposcionar los slots
+						
+						
+						push	hl
+						push	bc
+						push	de
+						push	af
+						ld		a,(slotvar)
+						ld		h,040h
+						call	ENASLT
+						
+						ld		a,(slotvar)
+						ld		h,080h
+						call	ENASLT
+						
+						pop		af
+						pop		de
+						pop		bc
+						pop		hl
+						
+						; volvemos a mi programa
+						ld		sp,(savesperror)
+						ld		a,1
+						ld		(errordskvar),a
+						
+						scf			; Error
+						ret
+dskabortdos1end:	
+				
+				
+
+
+; *** PRINT VIA BIOS ***
+
+; ----------------
+; PRINTCHAR
+; CutrePrintChar
+; DE: XY
+; A : Char
+; -----------------
+
+printchar:
+						ld		(CSRY),de
+						RST		OUTDO
+						ret
+
+; ------------------
+; PRINT
+; CutrePrint
+; DE : XY
+; HL : Puntero a texto
+; ------------------
+
+print:
+						ld		(CSRY),de
+print0:
+						ld		a,(hl)
+						inc		hl
+						or		a
+						ret		z
+						push	hl
+						RST		OUTDO
+						pop		hl
+						jr		print0
+
+
+				
+printlogo:
+						ld		de,(locatetxtlogo)
+						push	de
+						ld		hl,txtlogo
+						call	print
+						pop		de
+						inc		e
+						ld		hl,txtlogo2
+						jp		print
+
+
+printdosver:			ld		de,(locatetxtdosver)
+						ld		hl,txtdosver
+						call	print
+						
+						ld		de,(locatetxtdos)
+						ld		a,(dosversion)
+						cp		2
+						ld		hl,txtdos1		
+						jp		c,print
+						ld		hl,txtdos2
+						jp		print
+						
+
+
+; *** GENERIC ***
+
+
+exit:					
+						jr		$
+
+						ret
+
+
+; ***  TEXT ***
+
+error_txt:
+						db		"ERROR!!!!",0Dh,0Ah,"$"
+		
+
+locatetxtlogo:			db		2,14
+txtlogo:				db		"DISK EXAMPLE",0
+txtlogo2:				db		"------------",0
+
+		
+locatetxtdsknotfound:	db		12,12
+txtdsknotfound:
+						db		"DSK NOT FOUND!!!",0
+						
+locatetxtdosver:		db		6,1
+txtdosver:				db		"DOS VERSION: ",0
+
+locatetxtdos:			db		6,14
+txtdos1:				db		"DOS1",0
+txtdos2:				db		"DOS2",0
+						
+						
+locatetxtread:			db		8,1
+txtread:				db		"PRESS KEY TO READ 'EXAMPLE.TXT' FILE",0
+
+locatetxtsearch:		db		10,1
+txtsearch:				db		"SEARCH 'EXAMPLE.TXT' FILE ... ",0
+						
+locatetxtfound:			db		10,31
+txtfound:				db		"FOUND",0
+txtnotfound:			db		"NOT FOUND",0
+
+locatetxtreaderror:		db		12,1
+txtreaderror:			db		"ERROR READING 'EXAMPLE.TXT",0
+
+locatetxtwrite:			db		14,1
+txtwrite:				db		"PRESS KEY TO CREATE 'EXAMPLE2.TXT' FILE",0
+
+locatetxtwriteerror:	db		16,1
+txtwriteerror:			db		"ERROR WRITING 'EXAMPLE2.TXT'",0
+txtwriteok:				db		"WRITED OK. NO ERRORS. END DEMO",0
+
+locatetxtend:			db		20,1
+txtend:					db		"PRESS KEY TO RETURN TO MSX OS.",0
+
+
+; BDOS FILES
+
+FILEXAMPLE:				db		"EXAMPLE.TXT",0
+FILESAVE:				db		"EXAMPLE2.TXT",0
+
+; WRITEDATA
+
+WRITEDATA:				db		"EXAMPLE2.TXT WRITE DATA",0Dh,0Ah
+
+
+
+
+
+						; 8k ROM
+						
+						ds		06000h-$,0FFh
+
+
+
+
+;  **** VARIABLES *** 
+
+
+
+initmem:				equ		0C200h
+errorhandle:			equ		initmem			+		2
+aborthandle:			equ		errorhandle		+		128		; Rutina de error 
+savesperror:			equ		aborthandle		+		128		; Rutina de abort
+errorhandlejp:			equ		savesperror		+		2		; Doble indireccion error
+aborthandlejp:			equ		errorhandlejp	+		2		; Idem abort
+errordskvar:			equ		aborthandlejp	+		2		; A 1 si se produce un error con handle							
+slotvar:				equ		errordskvar		+ 		1
+dskfound:				equ		slotvar			+		1
+dosversion:				equ		dskfound		+		1
+fileopen:				equ		dosversion		+		1
+
+fcb:					equ		fileopen		+		1
+
+fdrive:					equ		fileopen		+		1
+fname:					equ		fdrive			+		1
+fext:					equ		fname			+		8
+freg:					equ		fext			+		5
+		
+fsizefile:				equ		freg			+		2
+
+fsizeread:				equ		fsizefile		+		17
+
+
+filehandle:				equ		fsizeread		+		5
+filenamedos2:			equ		filehandle		+		1
+
+dma:					equ		filenamedos2	+		20
+endmem:					equ		dma				+		0100
+
+
+
+
+								 

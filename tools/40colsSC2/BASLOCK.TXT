@@ -1,0 +1,130 @@
+---------------------------------------
+BasicLock 1.1
+for the MSX system
+(c) 1997,1998 A&L Software
+---------------------------------------
+
+* Contents
+
+  1.Purpose
+  2.Protections
+  3.Using
+  4.Security
+  5.Registering
+  6.The author
+
+* Purpose
+
+  The purpose of BasicLock is to
+difficult or deny the access to the
+BASIC code of a BASIC program.
+  By choosing the protection options
+you can "lock" your BASIC program.
+
+* Protections
+
+  Firstly, BasicLock save your BASIC
+program in binary form, so it can be
+loaded and executed by the "BLOAD ,R"
+command. By the way it's saved, you
+can't list the program after just
+loading it by the BLOAD command.
+  And more: to lock your program,
+BasicLock offers you 7 options of
+protection, that can be used alone or
+together. They are:
+
+  - Lock LIST command:
+    after executed, the program can't
+    be listed
+
+  - Lock CONTROL+STOP key:
+    after executed, the program can't
+    be stopped by pressing CONTROL
+    and STOP keys together
+
+  - Lock special keys:
+    after executed, the program can't
+    be stopped by pressing SHIFT, CODE,
+    GRAPH and CONTROL keys together
+
+  - Lock BASIC escape:
+    if your program stop by an error,by
+    an instruction or any other event
+    the MSX is automatically rebooted.
+    This option can be used with option
+    option "Clear memory on reset" for
+    better protection
+
+  - Hide BASIC code:
+    criptographs you BASIC code before
+    saving it in binary format. It's
+    useful for hiding copyright
+    messages or texts in the BASIC
+    program
+
+  - Clear memory on reset:
+    If the MSX is rebooted after the
+    program is executed, the program
+    will be erased from memory
+
+  - Clear memory at end:
+    If the control returns to BASIC
+    the program will be erased from
+    memory immediately
+
+* Using
+
+  Execute BasicLock by typing at the
+MSX-DOS (1 or 2) prompt:
+
+  BASLOCK
+
+  Type in the name of the program you
+want to lock. If you just hit RETURN,
+BasicLock will be ended.
+  Select the protection options you 
+want on the program with the cursor 
+keys and space bar. You can hit the ESC
+key to abort the program.
+  To really lock the program, choose
+the last option. The program will be
+locked and you will see the progress or
+fail on the screen bottom.
+
+* Security
+
+  Any protection method is not perfect, 
+and neither BasicLock. It can give 
+security to your program against ASCII 
+crackers, beginners and high-level 
+language programmers, but not against 
+good Z80 programmers/crackers.
+  Sorry! Nothing is perfect!
+
+* Registering the program
+
+  BasicLock is not free. BasicLock is
+"programware". What does it mind? It
+minds that if you like BasicLock and
+use it, you must register it by sending
+me an MSX program, freeware or 
+shareware. It can be any program,
+including a program made by yourself.
+  By doing it you will receive the last
+version of BasicLock and will have all
+the support on it.
+
+* The author
+
+  BasicLock is copyright (c) by 1997,98
+A&L Software.
+  To contact us for critics, comments,
+sugestions and (of course!) registering
+write to:
+
+  alsoft@usa.net       
+  
+  Or visit our MSX page at:
+
+  www.adrpage.cjb.net/msx.html

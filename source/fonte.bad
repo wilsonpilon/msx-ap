@@ -1,0 +1,32 @@
+## ***** Carrega a Fonte em Disco, formato Graphos III **********************
+## * Esta rotina carrega um alfabeto do Graphos III para a RAM e o usa como
+## * novo banco de caracteres, permitindo inclusive a troca de SCREEN sem
+## * perda da definicao. So funciona em MSX-DOS
+## * &H3A00: A fonte do graphos fica em #9200, porem nosso programa a usa em
+## *         #CC00, por isso precisamos carregar a mesma com este offset
+## * &HF91F: SlotID onde a nova fonte vai ser instalada (RAM), busca o dado
+## *         na area de systema do MSX-DOS (RAM Page 2 DOS/BASIC)
+## * &HF920: Endereco do banco de caracteres, em nosso caso &HCC00
+## *
+define [lalfa][peek (&Hc000)]
+define [halfa][peek (&Hc001)]
+define [lralfa][&HBF]
+define [hralfa][&H1B]
+
+{carrega_fonte}
+    clear 2000, &Hbfff:
+    bload [asmfile], r:
+    poke &Hf91f, peek(&hf341+3):
+    poke &Hf920, [lalfa]:
+    poke &Hf921, [halfa]:
+    goto {main}
+
+{descarrega_fonte}
+    poke &Hf91f, 0:
+    poke &Hf920, [lralfa]:
+    poke &Hf921, [hralfa]:
+    screen 0:
+    width 40:
+    key off:
+    color 15,1,1:
+    return

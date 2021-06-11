@@ -1,0 +1,12 @@
+diskio.rel:   diskio.mac
+              m80 =diskio.mac/r/z
+videoio.rel:  videoio.mac
+              m80 =videoio.mac/r/z
+mathpack.rel: mathpack.mac
+              m80 =mathpack.mac/r/z
+cursor.rel:   cursor.mac
+              m80=cursor.mac/r/z
+dispsect.rel: dispsect.mac
+              m80 =dispsect.mac/r/z
+diskio.com:   diskio.rel videoio.rel mathpack.rel cursor.rel dispsect.rel
+              l80 diskio/e/n/p:103/d:400,diskio,dispsect,cursor,videoio,mathpack

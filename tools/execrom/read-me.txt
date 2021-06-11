@@ -1,0 +1,135 @@
+---------------------------------------------------------------------------
+XPCtools
+(c) 2004 A&L Software
+---------------------------------------------------------------------------
+
+http://execrom.sf.net
+http://www.alsoftware.com.br/adrianpage/
+
+XPCtools is a set of tools to create and maintain patch files (XPC files) of
+ExecROM.
+
+A XPC file contains one ore more blocks of modifications to be applied to a
+ROM when ExecROM loads it. Each block has a textual description of the
+modification and a flag that signals if it must be asked to the user before
+being applied.
+Yet, each block may contain up to 255 lumps of ROM modifications. Each lump
+may contain up to 255 bytes to be modified. A modification is just a set
+of bytes that will replace the original on specific position (given a 8KB
+page and offset inside that page) of the ROM.
+
+XPCtools may be copied, modified and distributed freely under the Free Software
+Foundation's GPL version 2 license.
+
+- Tool list:
+
+xpcapply
+--------
+
+PURPOSE:
+Applies patches from a XPC file to a ROM
+
+SINTAX:
+xpcapply romfile [xpcfile] [-o modifiedromfile] [-ask|-askall]
+
+NOTES:
+if xpcfile is omitted or "-", it will be read from stdin
+if output ROM file is omitted, original ROM file itself will be modified
+
+
+xpccat
+------
+
+PURPOSE:
+Concatenates one or more XPC files together.
+
+SYNTAX:
+xpccat xpcfile1 [xpcfile2 [xpcfile3 ...]] [-o outputxpcfile]
+
+NOTES:
+if outputxpcfile is omitted or "-", it will be written to stdout
+
+
+xpcdel
+------
+
+PURPOSE:
+Removes a block o patches (given the description) of a XPC file.
+
+SYNTAX:
+xpcdel -desc[ription] "Patch description" [xpcfile]
+
+NOTES:
+if xpcfile is omitted or "-", it will be read from stdin and written to stdout
+
+
+xpcdump
+-------
+
+PURPOSE:
+Copy a single block of patches (given its description) from a XPC file to
+another.
+
+SYNTAX:
+xpcdump -desc[ription] "Patch description" [inputxpcfile] [outputxpcfile]
+
+NOTES:
+if inputxpcfile is omitted or "-", it will be read from stdin
+if outputxpcfile is omitted or "-", it will be written to stdout
+outputxpcfile is overwritten if already exists
+
+
+xpcgen
+------
+
+PURPOSE:
+Creates a XPC file from a text file in the same format of the xpcview output.
+
+SYNTAX:
+usage: xpcgen [inputfile] [outputxpcfile]
+
+NOTES:
+if inputfile is omitted or "-", it will be read from stdin
+if outputxpcfile is omitted or "-", it will be written to stdout
+inputfile must be in same format as xpcview output
+
+
+xpcmake
+-------
+
+PURPOSE:
+Creates a XPC file containing a single block, from the difference of two ROM
+files.
+
+SYNTAX:
+xpcmake -desc[ription] "Patch description" -type {ask|noask} [-o xpcfile] originalrom modifiedrom
+
+NOTES:
+if xpcfile is omitted or "-", it will be written to stdout
+
+
+xpcmodify
+---------
+
+PURPOSE:
+Modifies the description of a block of patches.
+
+SYNTAX:
+usage: xpcmodify -desc[ription] "Patch description" [-newdesc[cription] "New patch description"] [-type {ask|noask}] [patchfile]
+
+NOTES:
+if xpcfile is omitted or "-", it will be read from stdin and written to stdout
+
+
+xpcview
+-------
+
+PURPOSE:
+Displays the content of a XPC file in a human readable format.
+
+SYNTAX:
+usage: xpcview [xpcfile]
+
+NOTES:
+if xpcfile is omitted or "-", it will be read from stdin
+

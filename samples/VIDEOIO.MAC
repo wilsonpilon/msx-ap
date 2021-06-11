@@ -1,0 +1,203 @@
+.Z80
+
+BDOS    EQU 0005h               ;Entrada da BDOS
+CONOUT  EQU 02                  ;Impressao de caractere
+
+PUBLIC WRT_HEX
+PUBLIC WRT_HD
+PUBLIC WRT_CHR
+PUBLIC WRT_DEC
+PUBLIC WRT_NT
+PUBLIC WRT_PTN
+EXTRN DIVWB
+
+CSEG
+
+;-------------------------------------------------------------------------;
+; Esta procedure converte o byte no registrador DL para hexa e imprime    ;
+; os dois digitos na posicao corrente do cursor                           ;
+;                                                                         ;
+;       D: Byte a ser convertido para hexa.                               ;
+;                                                                         ;
+;     Usa: WRT_HD                                                         ;
+;-------------------------------------------------------------------------;
+WRT_HEX:
+        push af
+        push bc
+        push de
+        push hl
+        ld a,d                  ;Faz uma copia do byte
+        srl a                   ;Pega o nibble superior
+        srl a
+        srl a
+        srl a
+        push de
+        ld d,a
+        call WRT_HD             ;Imprime o primeiro digito
+        pop de
+        ld a,d                  ;Pega o nibble inferior
+        and 0Fh                 ;Remove o nibble superior
+        push de
+        ld d,a
+        call WRT_HD             ;Imprime o segundo digito
+        pop de
+        pop hl
+        pop de
+        pop bc
+        pop af
+        ret
+;-------------------------------------------------------------------------;
+; Esta rotina converte os quatro bits mais baixos de D num digito hexa    ;
+; e imprime na tela                                                       ;
+;                                                                         ;
+;       D: Os quatro digitos inferiores contendo o numero em hexa         ;
+;                                                                         ;
+;     Usa: WRT_CHR                                                        ;
+;                                                                         ;
+;-------------------------------------------------------------------------;
+WRT_HD:
+        push af
+        push bc
+        push de
+        push hl
+        ld a,d                  ;Usa registro A para calculos
+        cp 10                   ;O nibble e <10?
+        jp p,HEX_LTR            ;Nao, converte em letra
+        add a,"0"               ;Sim, converte em numero
+        jp WRT_DG               ;Agora imprime o caractere
+HEX_LTR:
+        add a,"A"-10            ;Converte para letra hexa
+WRT_DG:
+        ld d,a
+        call WRT_CHR            ;Imprime o caractere na tela
+        pop hl
+        pop de
+        pop bc
+        pop af
+        ret
+
+;-------------------------------------------------------------------------;
+; Esta rotina imprime um caractere na tela usando uma funcao do MSX-DOS   ;
+;                                                                         ;
+;       D: O byte do caractere a ser impresso                             ;
+;                                                                         ;
+;-------------------------------------------------------------------------;
+WRT_CHR:
+        push af                 ;Salva os registradores usados
+        push bc
+        push de
+        push hl
+        ld a,d
+        cp 20h
+        jp nc,IS_PRN            ;Se for maior nao seta a CARRY
+
+        push de                 ;Salva caracter
+        ld e,01h                ;Se caracter menor que 32
+        ld c,CONOUT             ;CHR$(1)CHR$(64+XX)
+        call BDOS
+        pop de                  ;Recupera caracter
+        ld a,40h                ;Soma com 64
+        add a,d
+        ld d,a
+IS_PRN:
+        ld c,CONOUT             ;Chamada para impressao de caractere
+        ld e,d                  ;Caractere em E
+        call BDOS               ;Imprime o caractere em E
+        pop hl                  ;Recupera os registradores usados
+        pop de
+        pop bc
+        pop af
+        ret                     ;E retorna
+
+;-------------------------------------------------------------------------;
+; Esta rotina imprime um caractere na tela N vezes usando uma funcao do   ;
+; MSX-DOS                                                                 ;
+;                                                                         ;
+;       D: O byte do caractere a ser impresso                             ;
+;     Usa: WRT_CHR                                                        ;
+;                                                                         ;
+;-------------------------------------------------------------------------;
+WRT_NT:
+        push af                 ;Salva os registradores
+        push bc
+        push de
+        push hl
+_WNTLP:
+        call WRT_CHR            ;Imprime o caractere
+        djnz _WNTLP             ;Continua ate o fim do loop
+        pop hl                  ;Recupera os registradores
+        pop de
+        pop bc
+        pop af
+        ret
+
+;-------------------------------------------------------------------------;
+; Esta rotina imprime um padrao de caracteres na tela                     ;
+;                                                                         ;
+;      DE: O endereco do padrao a ser impresso                            ;
+;     Usa: WRT_NT                                                         ;
+;                                                                         ;
+;-------------------------------------------------------------------------;
+WRT_PTN:
+        push af                 ;Salva os registradores
+        push bc
+        push de
+        push hl
+
+        ld h,d                  ;Copia DE em HL
+        ld l,e
+_WPTNL1:
+        ld a,(hl)               ;Le o dado do buffer
+        cp 0                    ;E o final?
+        jp z,_WPTEND            ;encerra
+        ld d,a                  ;Caractere a imprimir
+        inc hl                  ;Avanca para quantidade
+        ld b,(hl)               ;Quantidade a imprimir
+        call WRT_NT             ;Imprime N vezes
+        inc hl                  ;Passa para o proximo caractere
+        jp _WPTNL1              ;Recomeca
+_WPTEND:
+        pop hl                  ;Recupera os registradores
+        pop de
+        pop bc
+        pop af
+        ret
+
+
+;-------------------------------------------------------------------------;
+; Esta procedure escreve uma word, usigned em notacao decimal             ;
+;                                                                         ;
+;      HL: O word a ser convertido para decimal                           ;
+;                                                                         ;
+;-------------------------------------------------------------------------;
+WRT_DEC:
+        push af
+        push bc
+        push de
+        push hl
+        ld c,10d                ;Divisao por 10
+        ld b,0                  ;Conta numero de digitos da pilha
+_NOZWD: push bc                 ;Salva contador
+        call DIVWB              ;Divide HL por C
+        pop bc                  ;Recupera contador
+        push af                 ;Salva resto na pilha
+        inc b                   ;Incrementa controle de digitos
+        ld a,0                  ;HL = 0? se nao divide novamente por 10
+        cp h
+        jr nz,_NOZWD
+        ld a,0
+        cp l
+        jr nz,_NOZWD
+_WRLOP: pop af                  ;Recupera digito da pilha
+        ld d,a                  ;Prepara para impressao
+        push bc                 ;Salva contador
+        call WRT_HD             ;Imprime digito (reaproveita WRT_HD)
+        pop bc                  ;Restaura contador
+        djnz _WRLOP             ;Continua se houver mais digitos
+        pop hl
+        pop de
+        pop bc
+        pop af
+        ret
+END
+

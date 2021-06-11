@@ -1,0 +1,157 @@
+.Z80
+
+PUBLIC DIVBB
+PUBLIC DIVWW
+PUBLIC DIVWB
+PUBLIC MULBB
+PUBLIC MULWW
+PUBLIC MULWB
+
+CSEG
+
+;-------------------------------------------------------------------------;
+; Esta rotina divide um numero de 8 bits por outro de 8 bits              ;
+;                                                                         ;
+;        C: O numerador                                                   ;
+;        D: O denominador                                                 ;
+;                                                                         ;
+;  Retorna: A com o resto                                                 ;
+;           C com o resultado                                             ;
+;-------------------------------------------------------------------------;
+DIVBB:
+        ld b,8
+        xor a
+_LPDBB:
+        sla c
+        rla
+        cp d
+        jr c,$+4
+        inc c
+        sub d
+        djnz _LPDBB
+        ret
+        
+;-------------------------------------------------------------------------;
+; Esta rotina divide um numero de 16 bits por outro de 8 bits             ;
+;                                                                         ;
+;       HL: O word que contem o numerador                                 ;
+;        C: O denomionador                                                ;
+;                                                                         ;
+;  Retorna: A com o resto                                                 ;
+;           HL resultado                                                  ;
+;-------------------------------------------------------------------------;
+DIVWB:
+        ld b,16                 ;Divisao de 16 bits
+        xor a                   ;Zera A
+_LPDWB:
+        add hl,hl               ;Soma HL x Vezes para achar o quociente
+        rla                     ;Isola Carry e
+        cp c                    ;Compara denominador
+        jr c,$+4                ;Salta para LOOP (break)
+        inc l                   ;Incrementa
+        sub c                   ;Subtrai o denominador
+        djnz _LPDWB             ;Final do LOOP
+        ret
+
+;-------------------------------------------------------------------------;
+; Esta rotina divide um numero de 16 bits por outro de 16 bits            ;
+;                                                                         ;
+;       DE: O word que contem o numerador                                 ;
+;       BC: O denomionador                                                ;
+;                                                                         ;
+;  Retorna: HL com o resto                                                ;
+;           AC resultado                                                  ;
+;-------------------------------------------------------------------------;
+DIVWW:
+        ld hl,0
+        ld b,16
+_LPDWW:
+        db 0CBh,030h            ;sll c
+        rla
+        adc hl,hl
+        sbc hl,de
+        jr nc,$+4
+        add hl,de
+        dec c
+        djnz _LPDWW
+        ret
+
+;-------------------------------------------------------------------------;
+; Esta rotina multiplica um numero de 8 bits por outro de 8 bits          ;
+;                                                                         ;
+;        H: O multiplicador                                               ;
+;        D: O multiplicando                                               ;
+;                                                                         ;
+;  Retorna: HL produto                                                    ;
+;-------------------------------------------------------------------------;
+MULBB:
+        ld l,0
+        ld d,l
+        sla h
+        jr nc,$+3
+        ld l,e
+        ld b,7
+_LPMBB:
+        add hl,hl
+        jr nc,$+3
+        add hl,de
+        djnz _LPMBB
+        ret
+        
+;-------------------------------------------------------------------------;
+; Esta rotina multiplica um numero de 16 bits por outro de 8 bits         ;
+;                                                                         ;
+;       DE: O multiplicador                                               ;
+;        A: O multiplicando                                               ;
+;                                                                         ;
+;  Retorna: HL parte baixa do produto                                     ;
+;             A parte alta do produto (O resultado fica em 24 bits)        ;
+;-------------------------------------------------------------------------;
+MULWB:
+        ld c,0
+        ld h,c
+        ld l,h
+        add a,a
+        jr nc,$+4
+        ld h,d
+        ld l,e
+        ld b,7
+_LPMWB:
+        add hl,hl
+        rla
+        jr nc,$+4
+        add hl,de
+        add a,c
+        djnz _LPMWB
+        ret
+
+;-------------------------------------------------------------------------;
+; Esta rotina multiplica um numero de 16 bits por outro de 16 bits        ;
+;                                                                         ;
+;       BC: O multiplicador                                               ;
+;       DE: O multiplicando                                               ;
+;                                                                         ;
+;  Retorna: DE parte baixa do produto                                     ;
+;            HL parte alta do produto (O resultado fica em 24 bits)       ;
+;-------------------------------------------------------------------------;
+MULWW:
+        ld hl,0
+        sla e
+        rl d
+        jr nc,$+4
+        ld h,b
+        ld l,c
+        ld a,15
+_LPMWW:
+        add hl,hl
+        rl e
+        rl d
+        jr nc,$+6
+        add hl,bc
+        jr nc,$+3
+        dec a
+        djnz _LPMWW
+        ret
+
+
+end

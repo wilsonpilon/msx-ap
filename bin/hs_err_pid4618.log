@@ -1,0 +1,31 @@
+#
+# A fatal error has been detected by the Java Runtime Environment:
+#
+#  SIGSEGV (0xb) at pc=0x75e68b60, pid=4618, tid=5491
+#
+# JRE version: OpenJDK Runtime Environment (11.0.7+10) (build 11.0.7+10-post-Raspbian-3deb10u1)
+# Java VM: OpenJDK Server VM (11.0.7+10-post-Raspbian-3deb10u1, mixed mode, serial gc, linux-)
+# Problematic frame:
+# C  [libjimage.so+0x1b60]
+#
+# No core dump will be written. Core dumps have been disabled. To enable core dumping, try "ulimit -c unlimited" before starting Java again
+#
+# If you would like to submit a bug report, please visit:
+#   Unknown
+#
+
+---------------  S U M M A R Y ------------
+
+Command Line: mfe.jar
+
+Host: rev 4 (v7l), 4 cores, 926M, Raspbian GNU/Linux 10 (buster)
+Time: Sat May 16 13:09:51 2020 -03 elapsed time: 467 seconds (0d 0h 7m 47s)
+
+---------------  T H R E A D  ---------------
+
+Current thread (0x64d37c00):  JavaThread "XToolkt-Shutdown-Thread" [_thread_in_vm, id=5491, stack(0x75d77000,0x75dc7000)]
+
+Stack: [0x75d77000,0x75dc7000],  sp=0x75dc4540,  free space=309k
+Native frames: (J=compiled Java code, A=aot compiled Java code, j=interpreted, Vv=VM code, C=native code)
+C  [libjimage.so+0x1b60]
+V  [libjvm.so+0x2a9a78]

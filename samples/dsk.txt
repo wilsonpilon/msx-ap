@@ -1,0 +1,630 @@
+DSK EXAMPLE
+-----------
+
+
+1.- INTRODUCCIÓN
+
+Vamos a intentar explicar el uso básico del disco en MSX, orientado a una Rom, y 
+haciendo uso dual de funciones de MSX DOS y MSX DOS 2. 
+
+Aún así, el ejemplo del tutorial es totalmente válido para un fichero .COM para 
+DOS, con unos pocos cambios. 
+
+El ejemplo, demuestra de una forma sencilla, como detectar la presencia de un 
+fichero, como leerlo y como grabar un fichero nuevo. También se muestra como 
+controlar los errores que nos devuelve el sistema. 
+
+Nótese que este ejemplo no pretende ser un tutorial completo del trabajo con 
+disco. Para ello ya tenemos muchas referencias, y recomiendo al lector los 
+artículos de Néstor Soriano de la SD Mesxes sobre el tema. Solo se pretende 
+demostrar con un simple ejemplo como realizar las funciones básicas que usaremos 
+en el 99% de los juegos que creemos. Y sirve de iniciación para quien quiera 
+lanzarse a realizar alguna utilidad, donde si es necesario, seguramente, hacer 
+uso de más funciones del sistema operativo.
+
+Si necesitaramos más información, recomiendo al programador, la lectura obligada 
+de las referencias adjuntas en la sección Bibliografía.
+
+También indicar que todo el ejemplo se basa en la lectura/escritura de ficheros. 
+Dejamos al margen el tratamiento de sectores pues es un tema demasiado 
+complicado, ya que dependería del disco utilizado y podría tener terribles 
+consecuencia con dispositivos de almacenamiento masivo (tales como HDs, Zips, 
+MMCs, CF...) con un mal uso del mismo.
+
+
+
+2.- INICIALIZACIÓN.
+
+Quizás la parte más desconocida por los usuarios es la forma de inicializar la 
+unidad de disco, o cualquier otro dispositivo que necesite ser inicializado para 
+poder ser utilizado en nuestros programas. La solución mala es ejecutar nuestro 
+cartucho en un slot superior a la DISKROM, pero claro, eso, además de ser una 
+chapuza monumental no puede ser realizado cuando la DISKROM es interna, pues los 
+slots de propósito general siempre están por delante. Por suerte el standard MSX 
+cuenta con un modo bastante eficaz de hacerlo, aunque no muy documentado.
+
+Y todo está basado en uno de los muchos ganchos (HOOK) de los que dispone el 
+sistema MSX, y pueden ser utilizados por el usario. El gancho en cuestión es 
+H.STKE (FEDAH), aunque su descripción no nos ayuda mucho.
+
+Básicamente el sistema antes de inicialiar el Basic, Disk Basic, MSX-DOS o 
+cargar un programa en disco, consulta este gancho. Si el contenido es diferente 
+a C9 (un RET), inicializará lo que crea conveniente de lo anteriormente expuesto 
+según unos bien documentados criterios y que quedan lejos de este tutorial.
+
+Así pues, lo "único" que hemos de hacer al arrancar nuestra ROM es rellenar 
+correctamente este gancho para que, una vez inicializado todo el sistema (esto 
+pasa por recorrer todos los slots y subslots e iniciar todos los dispositivos, 
+por parte de la BIOS), nos devuelva el control a nuestro programa ROM. 
+
+El formato del gancho es el mismo que todos los ganchos, basado en un RST 30h 
+que en el sistema MSX, revisa los 3 bytes que vienen despues de la instrucción 
+para saltar a la dirección que le indiquemos, resumiendo:
+
+HOOK:  RST	30h 		; 0F7h 
+       db	slot        ; FxxxSSPP format 
+       dw	jmpadress	; Dirección del slot que indiquemos a la 
+                          que queremos que salte.
+
+No hay que ser muy inteligente para darse cuenta que este método tiene algunas 
+lagunas. Entre ellas, que solo se le puede indicar un salto, lo cual quiere 
+decir que si otro programa realiza la misma operación que nosotros, "machacará" 
+nuestros valores y, a no ser que nuestra ROM esté en un slot/superior a ese, 
+jamás se ejecutará. 
+
+Al igual que la convención para mantener los ganchos de interrupción, por 
+ejemplo, lo correcto sería salvar el contenido antiguo, poner el nuestro y 
+despues de nuestra inicialización, saltar al antiguo. Vamos crear una pequeña 
+lista con otros ganchos de otros programas.
+
+Pero esto es un poco inútil para nuestros propósitos, puesto que normalmente el 
+uso que le daremos será para nuestras propias aplicaciones que difícilmente 
+devolverán de nuevo el control al MSX, a no ser que las reseteemos. 
+
+Por lo tanto usaremos el modo "bruto" de realizarlo, que es posicionar nuestro 
+gancho, sin tener en cuenta a nadie más. (Somos así de egocéntricos con nuestro 
+programa).
+
+Siguiendo lo que hemos explicado nuestra rutina [initmain], lo primero y único 
+que hace es saltar a [initmaindsk] que posiciona la dirección de vuelta, el slot 
+y retorna el valor al sistema operativo.
+
+Atención: Ya que vamos a devolver el control al sistema operativo, no debemos de 
+posicionar la pila en otra dirección y dejarla tal cual esté cuando el sistema 
+nos da el control. 
+
+A partir de este momento solo queda esperar ya que cuando el MSX termine de 
+inializar los dispositivos, nuestro programa continuará desde [initmaindskret], 
+la dirección que le hemos indicado.
+
+(NOTA: Aquí se nos puede producir un problema y recibir un mensaje de "Not 
+enough memory" por parte del sistema operativo, que explicaremos al final).
+
+
+3.- DETECCION DE DISKROM / UNIDAD DE DISCO.
+
+Al igual que la inicialización, otra pequeña laguna con la cual nos encontramos. 
+Y es que, vale, ya hemos dejado que el MSX inicialice todos los dispositivos, 
+pero ahora tenemos que averiguar lo más importante... ¿existe unidad de disco? 
+
+Entiendo que todos estos problemas de documentación que tenemos, no serían los 
+mismos para los desarrolladores japoneses, y de hecho sus programas así lo 
+demuestran.
+
+Y hablando de los mismos, pues que para realizar la detección de disco, no me ha 
+quedado más remedio que investigar en alguno de estos programas. 
+
+Esto no quiere decir que lo expuesto en el programa no funcione, pero si quiere 
+decir que igual existen otras maneras de averiguar la presencia de disco.
+
+Para tal efecto usamos otro HOOK,  H.PHYD (FFA7H), pero esta vez solo 
+revisaremos su contenido. Si el HOOK contiene un RET (0C9h), no disponemos de 
+ninguna interfaz de disco conectada al MSX. En caso contrario si contamos con la 
+presencia de una. 
+
+Esto, que quede claro, no tiene nada que ver con tener o no tener un disco 
+conectado, o un disquette introducido. Sencillamente así sabemos que contamos 
+con una DISKROM standard a la cual podemos realizar llamadas y utilizar sus 
+servicios.
+
+Existe otra forma de detectar si existen DISKROMs inicializadas. Y es a través 
+de la dirección DEVICE (FD99H). Cada una de las DISKROM que se inicializan en el 
+sistema, despues de inicializar los dispositivos físicos que tiene conectados, 
+revisa la dirección DEVICE para averiguar si ya se ha inicializado otra DISKROM 
+como primaria. 
+
+De esta manera esa nueva DiskRom, solo inicializa la memoria para sus 
+dispositivos y no toca ningún gancho ni entrada, para evitar así que no se 
+arranque desde la DiskRom que ya se inicializó. En otras palabras. Si 
+posicionamos un interface IDE o SCSI en el slot 1, y una unidad de disco en slot 
+2, el sistema siempre arrancará o intentará arrancar del dispositivo conectado 
+en SLOT 1, en este ejemplo IDE/SCSI.
+
+Así pues, si revisamos DEVICE cuando llega el control a nuestro programa, tendrá 
+el valor de todas las DiskRom que estén conectadas e inicializadas en nuestro 
+MSX,  0 en caso de no haber ninguna y 0FFh (atención con esto) si alguna ha sido 
+cancelada al inicializarse o se ha encontrado con algun problema. 
+
+
+En el programa de ejemplo, despues de desactivar el gancho, inicializar el modo 
+de video y presentar la pantalla miramos H.PHYD (FFA7H) y lo indicamos con un 
+mensaje. En caso de no existir, el programa se da por terminado, se espera a que 
+se pulse una tecla y devuelve el control al MSX.
+
+
+4.- DUALIDAD DOS1 / DOS2
+
+Aunque para las necesidades de un típico programa ROM, normalmente juego, que 
+quiere cargar y grabar partidas, no requieran mucho más que las funciones de 
+DOS1, totalmente compatibles en DOS2, siempre es interesante aprender como 
+manejar este sistema operativo que tan poco uso sigue teniendo en MSX, aunque 
+cuente con casi 20 años de existencia. 
+
+DOS2, además, nos permite funciones extendidas que no permite DOS1. Manejo de 
+directorios y subdirectorios, control de muchos ficheros a la vez sin consumo de 
+memoria, reserva de memoria... 
+
+Por eso mismo, el ejemplo hace uso de las funciones de cada sistema operativo 
+según lo que se detecte al arrancar el programa. Para hacer más fácil la 
+programación, se han creado funciones con parámetros de entrada similares que 
+internamente ya disciernen el sistema operativo y actúan en consecuencia, por lo 
+que para el usuario es transparente la programación. 
+
+
+5.- EL PROGRAMA.
+
+Básicamente el programa realiza 3 operaciones con disco. 
+
+- Control de existencia de un fichero, que a su vez nos devuelve en caso de 
+existir información como su tamaño.
+
+- Lectura de ese fichero
+
+- Grabación de un fichero. 
+
+Lo primero y principal que realiza el programa es averiguar que version del DOS 
+se está ejecutando. Esto es importante para el uso de las demás rutinas.
+
+
+El programa es claro y nos va informando de la próxima operación a realizar. Nos 
+centraremos en las 3 rutinas base.
+
+- [checkfile] 
+
+Rutina que utiliza la funcion OPEN del sistema operativo para averiguar si 
+existe el fichero que le pasamos de parámetro existe. En caso de no existir nos 
+devolverá Cy Flag activo. Si existe, aprovechamos las funciones OPEN para 
+rellenar correctamente los campos de tamaño de fichero que usaremos en la 
+siguiente operación.
+
+- [readfile]
+
+Esta operación solo se realizará en caso de existir el fichero de ejemplo que 
+adjuntamos al tutorial. Lo que hace es, básicamente, basándose en los datos de 
+[checkfile] leer el fichero completo y mostrarlo en pantalla. 
+
+- [writefile]
+
+La inversa a la anterior grabará unos datos en un fichero cuyo nombre le 
+indicamos por parámetro.
+
+
+El programa nos pedirá la pulsación de una tecla y devolverá el control al MSX, 
+saltando éste al BASIC, ya que la rutina de carga de disco fue evitada al 
+arrancar nuestra ROM (esto es cosa del orden de la propia BIOS del MSX).
+
+
+6.- PREPAREFILE
+
+Esta rutina merece un comentario. El formato de manipular de ficheros de acceso 
+aleatorio en  DOS1 (FCB) y el de DOS2 (FileHandles), varía también en la forma 
+de presentarle la información para operar.
+
+Si bien DOS1 es, algo más "farragoso", además no es posible indicarle nada más 
+que la unidad lógica de donde queremos leer. DOS1 no contiene subdirectorios. 
+
+DOS2 sin embargo tiene un formato mucho más amigable para el programador, ya que 
+el fichero con el cual operar se le pasa en un puntero a una cadena ASCIIZ, es 
+decir que termina con un db 0. Esta cadena es, ni más ni menos, que la ruta 
+completa del fichero que deseamos leer, tal cual pondríamos bajo DOS. 
+
+Para compatibilizar ambas formas de preparar el fichero, se crea la funcion 
+preparefile a la cual le pasamos el puntero a una cadena ASCIIZ con el nombre de 
+fichero en formato DOS2. Y la rutina en si se encarga de prepararlo según el 
+sistema operativo que esté operando. 
+
+Preparefile es utilizado por checkfile, readfile y writefile, considerandose el 
+pilar base para las mismas. 
+
+7.- OTROS PARAMETROS DE ENTRADA
+
+Hablar de parametros de entrada de [readfile] y [writefile]. Son idénticos lo 
+cual también nos facilita la programación, aunque las operaciones son inversas.
+
+Los explicaremos:
+
+[] IX: Puntero a una cadena ASCIIZ con el nombre del fichero a operar. [] IY: 
+Direccion de la memoria donde situaremos el DMA. Traducido, la dirección de 
+memoria de donde / a donde, se escribiran / leeran los datos del fichero.
+
+[] DEHL: Seek Value. La operación SEEK nos situa el fichero en un punto del 
+mismo dado. Es decir, si nuestro fichero tiene 1000 bytes, puede que nos 
+interese leer a partir del byte 500. Si siquieramos eso, solo hemos de 
+indicarselo en DEHL. Como podemos comprobar tenemos 32bits para nosotros. Sip. 
+DOS es capaz de manejar ficheros de hasta 4 Gigas y quedarse tan pancho. 
+Logicamente al ser de acceso aleatorio el DOS solo tendría que leer la parte que 
+nos interesa, al contrario que otros tipos de lectura conocidos en otros 
+lenguajes donde tendriámos que pasar por todo el fichero hasta llegar a la parte 
+que nos interesa. Recordar que DOS1 no cuenta con funcion SEEK. La hemos 
+simulado para DOS1, y es funcional.
+
+[] BC: Datos en bytes a leer/escribir en el fichero. No tiene sentido que este 
+número sea de más de 16 bits, ya que es imposible operar con mas de 64k 
+directamente. Si necesitamos grabar/leer más, pues habría que hacer varias 
+lecturas.
+
+[] A: 0 Para no hacer el seek, es decir fuerza desde el principio del fichero, 
+numero diferente para efectuarlo. Esto igual no tiene sentido para el ejemplo, 
+pero seguro que el avispado lector le encuentra un uso en el futuro.
+
+
+Ambas funciones [writefile] [readfile] operan con UN UNICO FICHERO A LA VEZ. 
+Tanto DOS1 como DOS2 pueden manejar varios ficheros a la vez. Siendo bastante 
+incómod en DOS1, por el tema del FCB, y muy manejable en DOS2 por lo 
+FileHandles. Como el ejemplo es pequeño y como, estoy seguro que, nadie va a 
+utilizar más de un fichero a la vez a no ser que programe una utilidad compleja, 
+ambas funciones aprovechan esto como ventaja. 
+
+Una vez abierto para lectura o escritura un fichero, si no hacemos un 
+[closefile] el fichero permanece abierto, así que podemos seguir haciendo 
+lecturas y escrituras sin necesidad de volver a abrir el fichero.
+
+La comodidad de esto la da el sistema operativo. Si, por ejemplo, leemos 500 
+bytes de un fichero, el propio DOS ajusta los valores de los punteros para, 
+cuando se produzca la siguiente lectura se de desde el byte siguiente al último 
+leido. Idem para escritura. De ahí la necesidad del parámetro de "Seek, Not 
+Seek" que hemos añadido a las funciones.
+
+
+
+7.- BDOS
+
+El alma principal de todo programa bajo MSX-DOS. Es la funcion que llama a todas 
+las funciones de DOS. El el apartado de control de errores se explicará porque 
+se guarda el puntero de pila. 
+
+Básicamente la funcion solo ha de llamar a 0F37Dh ó 05h si estamos bajo MSX-DOS. 
+Nuestra funcion BDOS lo único que hace es devolver Cy activo cuando se produce 
+un error. 
+
+Las funciones de DOS, NO TODAS, pero si la mayoría devuelven A distinto de 0 si 
+ha ocurrido algún error. En el caso de funciones como READ o WRITE, se nos 
+devuelven más parámetros, como la cantidad de datos leidos/escritos. 
+
+Para facilitar la funcion se ha creado una funcion propia BDOS que comprueba el 
+acumulador cuando la funcion ha sido realizada para activar o no Cy Flag.
+
+Mucho cuidado con esto: NO TODAS LAS FUNCIONES DEL DOS DEVUELVEN ERROR. Quiero 
+remarcar esto bien, puesto que funciones como SETDMA pueden devolver A distinto 
+de 0 y eso *no significa que existe un error*.
+
+No hay manera de saber si es error o no, excepto por la documentación que bien 
+lo explica. 
+
+
+
+
+
+8.- CONTROL DE ERRORES
+
+Como los que ya hemos comentado, otro punto oscuro dentro de la documentación 
+del MSXDOS es el control de errores. Normalmente todas las funciones que pueden 
+provocar un error, nos devuelven la indicación del mismo tras la llamada a BDOS. 
+No todas las funciones devuelven error, y para eso ya tenemos la documentación. 
+
+Pero cuando el error es más grave de lo normal, el MSXDOS no nos devuelve el 
+error, y encima nos provoca un bonito cuelgue. Cuando hablo de más grave de lo 
+habitual, me refiero a casos de "Disk offline". O no tenemos conectado el disco, 
+o no está introducido, o está defectuoso ... 
+
+Estos errores no son devueltos por la función llamada y son tratados de 
+diferente forma. Se basan en, para variar, unos ganchos que posiciona la diskRom 
+en las variables de sistema, donde salta despues de producirse. Existen dos 
+ganchos, uno para ERROR y otro para la rutina ABORT. 
+
+Hemos de hacer uso de ambas rutinas, según lo que he podido deducir. 
+Desgraciadamente la única información encontrada sobre este punto la he 
+encontrado en holandés, y no tengo conocimientos de ese idioma.
+
+Para complicar el asunto, DOS2 *si* dispone de rutinas de control de error. Pero 
+no son funcionales desde la llamada de 0F37Dh (BIOSCALL). ¿Razón? Se desconoce. 
+Así que tenemos que tirar mano de estas rutinas, que tienen una sutil diferencia 
+en el gancho usado por ABORT, siendo común el gancho ERROR.
+
+Eso si, las rutinas nos dan mucha información de por qué se ha producido el 
+error, aunque para nuestro ejemplo son descartados.
+
+El usuario puede parchear esas rutinas teniendo algunas cosas en cuenta:
+
+[] No se puede posicionar la rutina de parcheo en la zona de pagina 1 de Z80 
+(04000h-07FFFh). Aunque no tengo claro si se puede posicionar en la pagina 2. Lo 
+recomendable es hacerlo en la pagina 3, la "inamovible", ya que nos garantizamos 
+que si podrá saltar ya que el gancho está en ella misma. 
+
+[] Una vez tratado el error no nos vale con hacer un RET normal para regresar a 
+la rutina. La forma de volver a nuestro programa es la siguiente :
+
+	- Antes de llamar a BDOSCALL, salvar el contenido actual de la pila - Si se 
+	produce un error, una vez tratado, recuperaremos el slot de nuestro programa 
+	ya que la diskRom lo habrá cambiado para posicionarse. - Recuperamos el 
+	valor de la pila que teniamos salvado previamente. - Ret.
+
+En nuestro ejemplo, la rutina de control de error "grave" es muy simple. Y hace 
+uso de una segunda rutina de error, ABORT. Sencillamente se posiciona en C el 
+valor 2, y se hace un ret. Despues de nuestra rutina, el sistema operativo 
+saltará al gancho de ABORT, ya que le hemos pasado el valor 2 en C.
+
+En caso de pasarle otro valor, el sistema operativo seguiría con la operación y 
+volvería a reintentar la operacion que le pedimos. A grandes rasgos:
+
+C:	0 -> Ignore/Continue 
+    1 -> Retry 
+    2 -> Abort
+
+El gancho de ABORT también lo tenemos parcheado. Y en este gancho hacemos lo 
+anteriormente explicado, recuperamos la pila y volvemos a nuestro programa, con 
+el flag Cy activado, para que la propia rutina de control normal de errores se 
+de cuenta de que se ha producido un error.
+
+Nuestra función BDOS, por ello, graba el contenido de la pila actual en una 
+variable. La rutina de error ABORT además, posiciona un 1 en la variable 
+errordskvar, por si necesitásemos profundizar de donde viene el error, ya que 
+actualmente solo recibiremos el carry activo.
+
+Así pues [initdskerror], lo que hace, al principio de nuestro programa es 
+preparar esos ganchos y posicionar en memoria nuestras rutinas de control de 
+errores. Si deseamos más información sobre el tratamiento de error y la 
+información que el MSX-DOS(2) nos brinda, recomiendo la lectura de los artículos 
+apuntados en la bibliografía.
+
+Lo único a resaltar de esta rutina es como preparar estos ganchos de error. Son, 
+quizá, los más raros existentes dentro de la norma MSX, pues son punteros "doble 
+indirectos". No se si la terminología usada es correcta, pero básicamente lo que 
+debemos de almacenar en el puntero de ERROR es el puntero a donde se almacenará 
+el puntero de donde se encuentra realmente la rutina. Divertido, ¿verdad? El 
+gancho de ABORT está dividido en dos partes. Dos bytes más alto que ERROR se 
+encuentra el gancho de ABORT que funciona correctamente en DOS2. Y en DOS1 hemos 
+de hacer uso de ABRADR que, este si, es un gancho normal de 3 bytes, donde solo 
+hemos de rellenar sus puntero. Curiosamente si inicializamos este puntero en 
+DOS2, el control de errores no funciona. Por eso la rutina de error discierne 
+entre ambos SO para preparar los ganchos.
+
+
+
+
+
+9.- PRECAUCIONES Y BUENOS HÁBITOS.
+
+El ejemplo expuesto no es del todo correcto y podría ocasionar problemas en 
+según que configuraciones. Pero hacerlo correcto complicaba demasiado lo que no 
+deja de ser un ejemplo simple. Por lo tanto nombraremos las cosas que el futuro 
+programador debe de tener en cuenta.
+
+- La pila: Bien, al contrario que el típico programa ROM clásico, la pila no es 
+posicionada en ninguna posición. Esto podría ser peligroso en cuanto a que 
+usamos valores fijos para nuestra zona de memoria. Podría darse el caso de tener 
+la pila posicionada en la misma zona de memoria, lo cual daría inevitables 
+errores. Como apunta el comentario de principio de programa la pila no es 
+posicionada porque nuestro ejemplo desea volver al SO al final. Pero normalmente 
+todas las diskRom posicionan la pila en 0C200h antes de llamar al gancho de 
+H.STKE, en caso de encontrarse una unidad de disco. En caso de no encontrarse, 
+no podemos saber la ubicación exacta de la pila , aunque ya podríamos tratar el 
+programa como un ROM normal.
+
+- HIMEM: O lo que es lo mismo el puntero de la parte más alta de la memoria 
+utilizable por el usuario. Hemos de tener algo de cuidado con esto. No podremos 
+rebasar esa dirección de memoria para nuestro programa, pues los efectos son 
+desconocidos, pero seguro que desagradables. Esa memoria está reservada por 
+(normalmente) la diskRom y la usa como buffer para sus unidades lógicas.
+
+Si vamos a usar mucho más de esa memoria (HIMEM-C200h), ya que disponemos de 
+unidad de disco, se puede hacer uso de 4 variables de sistema que nos posiciona 
+la diskROM. En estas variables se nos indica el slot/subslot donde encontramos 
+16k de Ram para las paginas 0,1,2,3 del Z80. Estas variables son :
+
+RAMAD0	equ	0F341H			; slotid DOS ram page 0 
+RAMAD1	equ	0F342H	        ; slotid DOS ram page 1 
+RAMAD2	equ	0F343H          ; slotid DOS ram page 2 
+RAMAD3	equ	0F344H			; slotid DOS ram page 3
+
+Queda claro que esta sugerencia es solo para programas en ROM, puesto que bajo 
+MSXDOS ya disponemos de esas páginas posicionadas y de una zona (TPA) bastante 
+grande para nuestros programas.
+
+- 8K de RAM: Este es un problema habitual cuando vamos a usar disco. Todos 
+sabemos que existen MSX con 8k de Ram. Esto complica un poco las cosas para 
+hacer un programa de MSX de primera generación compatible con ellos y encima 
+hacer uso de disco. El problema es que con 8k de Ram, disponemos de unas 4k 
+utilizables para nosotros a partir de la dirección de memoria 0E000h. Esa 
+dirección es utilizada por el disco en caso de existir, por lo que si 
+posicionamos directamente allí los datos y variables de nuestro programa, 
+estamos inutilizando el uso del disco (siempre hablando de que requiramos el uso 
+del disco como extra o necesidad de nuestro programa).
+
+Lo cual nos lleva a pensar en usar una zona de datos reubicable segun nuestras 
+necesidades. Y esto ya no es tan sencillo de programar. Podemos usar un truco 
+usado en programas que quieren mucha velocidad, jugar con la pila y posicionar 
+nuestras variables en una direccion "redonda", es decir con el byte bajo a 00h, 
+para luego posicionar el valor del byte alto y acceder solo modificando el bajo. 
+Es un galimatias de explicar y se sale fuera de este artículo.
+
+Existe otra solución, aunque un poco mas "brutal", y con la cual no se si se 
+producirán efectos colaterales. Pasa por usar siempre la memoria 0E000h en 
+adelante. Pero teniendo en cuenta ANTES de empezar a usarla, que si existe 
+unidad de disco, hemos de salvar sus valores. Es decir, como cuando tenemos 
+disco, sabemos que contamos con 64k de Ram, y sabemos donde está ubicada 
+(RAMAD0...), solo hemos de salvar los datos de la zona de 0E000h a 0F380h en 
+cualquier lugar de esa Ram extra antes de empezar nuestro programa. 
+
+Una vez salvados, cuando hagamos uso del disco, salvamos nuestros valores en 
+otra zona, recuperamos los anteriormente salvados (los de disco) usamos el 
+disco, y recuperamos de nuevo los nuestros. :) Es más difícil de explicar que de 
+hacer, pero es una solución.
+
+Como muestra un botón, recomiendo el estudio de Shalom de Konami, que solo 
+necesita 8k de Ram para funcionar y es compatible con disco para salvar/cargar 
+partidas.
+
+
+Para terminar, aclarar uno de los errores más comunes en el novato de manejo del 
+disco. Hablemos del [closefile]. Para lectura no es necesario, pero si después 
+de escribir en un fichero, y ya dada por terminada la escritura (es decir, no 
+vamos a escribir nada más de momento), NO cerramos el fichero, los datos no se 
+escribirán en el fichero. Es decir, que perderemos todos los datos escritos.
+
+Esto es así por pura lógica. DOS utiliza sus propios buffers para acelerar las 
+funciones. De no ser así, escribir en algunos medios podría ser muy lento. 
+
+Así que tengamos eso en cuenta: Tenemos que llamar siempre a [closefile] si o 
+si. 
+
+10.- Y LLEGO EL TURBO R CON SU DOS 2.31
+
+Si alguien se atreve a ejecutar la rom, y tiene la suerte de tener un Turbo R, o 
+bien contar con un interface de disco masivo que incorpore el DOS 2.31, tal como 
+MegaSCSI, Sunrise ATA IDE, o similar, insertado, recibirá un bonito mensaje en 
+pantalla con un bonito cuelgue, que reza:
+
+"Not enough memory".
+
+Bien, lo primero que pensaremos es que nos han tomado el pelo y lo segundo que 
+algo va mal. 
+
+Pues si, algo va mal, aunque es ajeno a nuestro programa que es totalmente 
+compatible y correcto. Sin querer ser demasiado extenso y técnico voy a intentar 
+describir lo que pasa, y porqué pasa, aunque no tengo muy claro por qué se hizo 
+así. Solo puedo dar una hipótesis del asunto.
+
+
+Para compatibilizar antiguos ROMs que hacían uso del disco, la diskRom del 
+TurboR (o mejor dicho el DOS 2.31) es algo especial. Mientras no encuentra nada 
+en H.STKE, todo es normal, pero si encuentra que este gancho ha sido utilizado, 
+"fuerza" unas cuantas cosas:
+
+[] Ignora por completo a las otras diskRom. Es decir toma el control absoluto, 
+cosa que no es muy común ni correcto.
+
+[] Ignora el DOS2. Fuerza totalmente a arrancar en DOS1, así que tira abajo 
+cualquier arranque de DOS2 que ya estuviese inicializado por uno de estos 
+interfaces, incluído el suyo propio (ambos modelos de Turbo R disponen de DOS2 
+en ROM).
+
+[] Reinicializa TODAS las unidades de disco lógicas que han sido inicializadas 
+en el boot, en "formato DOS1". 
+
+[] Arranca (si puede) el cartucho.
+
+
+Este último punto antes del arranque es el que da el problema. Con la llegada 
+del DOS2 ya se mejoró totalmente la inicialización y reserva de memoria de cada 
+unidad lógica. DOS1 reserva parte de memoria de la página 3 (unos cuantos Ks) 
+para cada unidad lógica. Esto es fácil de ver y de recordar. Si arrancamos con 
+una unidad de disco y vamos a BASIC tenemos unos 23000 bytes disponibles, ¿no? Y 
+si arrancamos con CTRL pulsado tenemos unos 24000 bytes. ¿Que ha pasado? Pues 
+que hemos anulado la unidad (simulada) B:, por eso disponemos de más memoria 
+alta. 
+
+Pero sin embargo si arrancamos en DOS2, tendremos la flamante cantidad de unos 
+25000 bytes, sean las que sean las unidades arrancadas. Esto se llama mejora 
+notable.
+
+Pues bien, ahora vamos con el problema. Al tomar el control la diskRom del Turbo 
+R (o el DOS 2.31), y FORZAR el DOS1, ha de RESERVAR MEMORIA PARA CADA UNA DE LAS 
+UNIDADES LOGICAS INICIALIZADAS, que eso se traduce en un caso "habitual" a unas 
+7 ó 8 unidades.  Es decir de A: a F: para el disco duro o similar, más G: y H: 
+para disquetera. 
+
+Y claro, 8 ó 7 multiplicado por las Ks que consume en memoria alta cada unidad, 
+pues hacen que la memoria libre baje mucho y baje de la dirección C200h, que es 
+lo que pone de tope una diskRom para inicializarse y nos lleva al error de 
+memoria. 
+
+Para colmo de males, si conseguimos arrancar (por ejemplo dejando solo una 
+unidad lógica en nuestro interface y pulsando CTRL para arrancar) el sistema 
+estará en DOS1, vamos que podemos afirmar que es IMPOSIBLE arrancar una ROM en 
+Turbo R con DOS2, ya que el sistema NO nos lo permite. Y si es posible en 
+cualquier otro MSX (y cuando digo cualquier, es cualquier, pues el programa ha 
+sido probado en MSX1,2 y 2+).
+
+La hipótesis: Pues repito de nuevo. Compatibilidad con viejo soft. Si algún 
+viejo cartucho usaba funciones de DOS1 (o mal usaba, pues las funciones de DOS1 
+son TOTALMENTE COMPATIBLES CON DOS2), y por precaución a malfuncionamiento, pues 
+fuerzan el arranque en DOS1. 
+
+Si está bien o está mal, no me atrevo a decirlo, pues como digo, es una 
+hipótesis y no descarto que exista una manera de forzar al sistema a que no lo 
+haga así (aunque despues de 3 días haciendo pruebas y desensamblando la diskRom 
+del Turbo R casi lo pueda confirmar). Y bueno, los poseedores de la LPEMMC 
+pueden forzar a que esto no pase con la tecla especial habilitada para ello 
+(TAB). 
+
+Lo que no pueda dar es una solución óptima. Todas pasan por chapuzas y guarradas 
+de alto nivel, que no quiero inculcar a nadie. La solución más caballeresca en 
+este punto es INFORMAR al usuario de Turbo R o DOS 2.31 con un manual de que 
+esto puede pasar en caso de tener un controlador de disco externo.
+
+
+En cualquier caso, cualquier usuario de Turbo R (o DOS 2.31) estará acostumbrado 
+a dicho mensaje, y sabrá que debe de desconectar el interfaz externo. 
+
+También existen ciertas ROMs "malmodificadas" para solucionar el error, pero 
+tienen requerimientos muy fijos, de los que no me gustan, que pasan por ejecutar 
+siempre el cartucho en el slot 1, y tener el interfaz de disco en el 2. No es 
+algo recomendable, puesto que encima, puede hacer que en muchas otras 
+configuraciones no funcione el disco, por ejemplo, un MSX sin unidad de disco, 
+donde le conectamos una unidad externa en uno de sus slots, dejará de funcionar. 
+Hete aquí un ejemplo de lo que puede ocasionar la chapuza. 
+
+11.- AGRADECIMIENTOS
+
+[] Manuel Pazos: Por su ayuda en el desensamblado. 
+[] Néstor Soriano: Por las consultas sobre el DOS2, y sus maravillosos artículos 
+publicados sobre el tema.
+
+
+12 .- BIBLIOGRAFIA 
+
+- SD Mesxes.
+
+- MSX DOS 2 MANUAL -> www.hansotten.com (encontramos todos los manuales del 
+DOS2, command, reference, functions ...)
+
+- Hans Otten Web -> www.hansotten.com.  En la parte de Documentación técnica 
+además del ya nombrado manual del DOS2, encontramos muchas referencias a 
+documentación del DOS1. Desgraciadamente mucha incompleta, o en holandés.
+
+- Arjen Zeilemaker -> http://sourceforge.net/projects/msxsyssrc  Aquí 
+encontramos todas las BIOS conocidas del MSX desensambladas y comentadas. Son de 
+mucha ayuda para terminar de comprender ciertos comportamientos del sistema 
+operativo. (Y muchas veces para hacer este artículo la única manera de 
+comprenderlas).
+
+
+Armando Pérez Abad (c) 2008 Ramones
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

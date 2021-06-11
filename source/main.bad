@@ -1,0 +1,11 @@
+## ***** Programa Principal **************************************************
+goto {carrega_fonte}
+{main}
+    defint a-z:
+    gosub {desktop}:
+    gosub {carrega_menu}:
+    gosub {carrega_help}:
+    gosub {show_menu}:
+    gosub {menu}:
+    gosub {descarrega_fonte}:
+    end

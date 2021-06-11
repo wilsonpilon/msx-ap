@@ -1,0 +1,23 @@
+; [YOUR GROUP] MSX Z80 source file.
+;
+; Prog: |
+; Code: [YOUR HANDLE]
+; Date:
+;
+; cmnt:
+;
+; Coded in TeddyWareZ' Chaos Assembler 3
+;
+; (C) 2001 [YOUR GROUP]!
+
+#include "macro's.asm"
+
+	.org $9000 - 7
+
+	.db $fe
+	.dw startProgram,endProgram,startProgram
+
+startProgram:
+endProgram:
+
+.end

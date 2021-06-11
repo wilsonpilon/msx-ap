@@ -1,0 +1,130 @@
+---------------------------------------------------------------------------
+XPCTOOLS
+(c) 2004 A&L Software
+---------------------------------------------------------------------------
+
+http://www.alsoftware.com.br/adrianpage/
+
+O XPCTOOLS e' um conjunto de ferramentas para criacao e manutencao de
+arquivos de patch ("arquivos XPC") do ExecROM.
+
+Um arquivo XPC contem um ou mais blocos de modificacoes a serem feitas na ROM
+carregada pelo ExecROM. Cada bloco possui uma descricao da alteracao e se o
+ExecROM deve perguntar ao usuario se ele deseja que a alteracao seja feita.
+Ainda, cada bloco pode conter ate' 255 alteracoes na ROM, sendo que cada
+alteracao pode ter ate' 255 bytes. Uma alteracao e' apenas um conjunto de
+bytes que devem substituir os originais em posicoes especificas (dadas por uma
+pagina de 8KB e um deslocamento dentro dela) da ROM carregada.
+
+O xpctools pode ser copiado, modificado e distribuido livremente, desde que de
+acordo com a licenca GPL versao 2 ou posterior da Free Software Foundation.
+
+
+xpcapply
+--------
+
+OBJETIVO:
+Aplica os patches de um arquivo XPC a uma ROM.
+
+SINTAXE DE USO:
+xpcapply arquivorom [arquivoxpc] [-o arquivorommodificado] [-ask|-askall]
+
+OBSERVACOES SOBRE OS PARAMETROS:
+Se o nome do arquivo XPC ("arquivoxpc") for omitido ou "-", ele sera' lido da entrada padrao.
+Se o nome do arquivo ROM modificado ("arquivorommodificado") for omitido, o proprio arquivo ROM
+original sera' modificado.
+
+
+xpccat
+------
+
+OBJETIVO:
+Concatena um ou mais arquivos XPC em um so'.
+
+SINTAXE DE USO:
+xpccat arquivoxpc1 [arquivoxpc2 [arquivoxpc3 ...]] [-o arquivoxpc]
+
+OBSERVACOES SOBRE OS PARAMETROS:
+Se o nome do arquivo XPC ("arquivoxpc") for omitido ou "-", ele sera' enviado para a saida padrao.
+
+
+xpcdel
+------
+
+OBJETIVO:
+Remove um bloco de patches (dado pela sua descricao) de um arquivo XPC.
+
+SINTAXE DE USO:
+xpcdel -desc[ription] "descricao" [arquivoxpc]
+
+OBSERVACOES SOBRE OS PARAMETROS:
+Se o nome do arquivo XPC ("arquivoxpc") for omitido ou "-", ele sera' lido da entrada padrao e
+enviado para a saida padrao.
+
+
+xpcdump
+-------
+
+OBJETIVO:
+Copia um unico bloco de patches (dado pela sua descricao) de um arquivo XPC para outro.
+
+SINTAXE DE USO:
+xpcdump -desc[ription] "descricao" [arquivoxpcentrada] [arquivoxpcsaida]
+
+OBSERVACOES SOBRE OS PARAMETROS:
+Se o nome do arquivo XPC de entrada for omitido ou "-", ele sera' lido da entrada padrao.
+Se o nome do arquivo XPC de saida for omitido ou "-", ele sera' enviado para a saida padrao.
+
+
+xpcgen
+------
+
+OBJETIVO:
+Cria um arquivo XPC a partir de um arquivo texto no formato de saida do xpcview.
+
+SINTAXE DE USO:
+xpcgen [arquivoentrada] [arquivoxpc]
+Se o nome do arquivo de entrada for omitido ou "-", ele sera' lido da entrada padrao.
+Se o nome do arquivo XPC for omitido ou "-", ele sera' enviado para a saida padrao.
+
+
+xpcmake
+-------
+
+OBJETIVO:
+Cria um arquivo XPC contendo um unico patch a partir da diferenca de dois arquivos ROM. 
+
+SINTAXE DE USO:
+xpcmake -desc[ription] "descricao" -type {ask|noask} [-o arquivoxpc] romoriginal rommodificada
+
+OBSERVACOES SOBRE OS PARAMETROS:
+Se o nome do arquivo XPC ("arquivoxpc") for omitido ou "-", ele sera' enviado para a saida padrao.
+
+
+xpcmodify
+---------
+
+OBJETIVO:
+Modifica a descricao ou o tipo de um bloco de patches.
+
+SINTAXE DE USO:
+xpcmodify -desc[ription] "descricao" [-newdesc[cription] "nova descricao"] [-type {ask|noask}] [arquivoxpc]
+
+OBSERVACOES SOBRE OS PARAMETROS:
+Se o nome do arquivo XPC ("arquivoxpc") for omitido ou "-", ele sera' lido da entrada padrao e
+enviado para a saida padrao.
+
+
+xpcview
+-------
+
+OBJETIVO:
+Mostra o conteudo de um arquivo XPC em um formato texto inteligivel.
+
+SINTAXE DE USO:
+xpcview [arquivoxpc]
+
+OBSERVACOES SOBRE OS PARAMETROS:
+Se o nome do arquivo XPC ("arquivoxpc") for omitido ou "-", ele sera' lido da entrada padrao.
+
+

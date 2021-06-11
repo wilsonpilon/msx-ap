@@ -1,0 +1,20 @@
+Now you have no excuse.
+
+Code extremely tested. It seems to work with ALL the PT3 modules. For more
+info about it and all the people involved in this great player go to
+http://bulba.at.kz (VT II v1.0 PT3 player for ZX Spectrum).
+
+Features
+--------
+-Can be compiled at any address (i.e. no need rounding .org
+ address).
+-Variables (VARS) can be located at any address (not only after
+ code block).
+-INIT subroutine detects module version and rightly generates
+ both note and volume tables outside of code block (in VARS).
+-Two portamento (spc. command 3xxx) algorithms (depending of
+ module version).
+-Any Tempo value are accepted (including Tempo=1 and Tempo=2).
+-Fully compatible with Ay_Emul PT3 player codes.
+
+Adapted to MSX by Alfonso D. C. a.k.a. Dioniso (09-01-05).

@@ -1,0 +1,823 @@
+CMND ADC HL,
+ADC HL,[VALUE] - Add with carry register pair to HL
+ 
+Possible Values:                                                  L | T
+BC    - Add HL with carry registerpair BC                         2 | 15
+DE    - Add HL with carry registerpair DE                         2 | 15
+HL    - Add HL with carry registerpair HL                         2 | 15
+SP    - Add HL with carry registerpair SP                         2 | 15
+.
+CMND ADC A,
+ADC A,[VALUE] - Add with carry to accumulator                       
+ 
+Possible Values:                                                  L | T
+Any 8-bit registers (A B C D E H L)                               1 | 4
+Any 8-bit number    (0..255)                                      2 | 7
+ 
+(HL)   - Add accumulator with carry contents of address HL        1 | 7
+(IX+d) - Add accumulator with carry contents of address IX+d      3 | 19
+(IY+d) - Add accumulator with carry contents of address IY+d      3 | 19
+ 
+d - offset (0..255)
+.
+CMND ADD A,
+ADD A,[VALUE] - add to accumulator
+ 
+Possible Values:                                                  L | T
+Any 8-bit registers (A B C D E H L)                               1 | 4
+Any 8-bit number    (0..255)                                      2 | 7
+ 
+(HL)   - Add accumulator with carry contents of address HL        1 | 7
+(IX+d) - Add accumulator with carry contents of address IX+d      3 | 19
+(IY+d) - Add accumulator with carry contents of address IY+d      3 | 19
+ 
+d - offset (0..255)
+.
+CMND ADD HL,
+ADD HL,[VALUE] - add to registerpair HL
+ 
+Possible Values:                                                  L | T
+BC    - Add HL with carry registerpair BC                         1 | 11
+DE    - Add HL with carry registerpair DE                         1 | 11
+HL    - Add HL with carry registerpair HL                         1 | 11
+SP    - Add HL with carry registerpair SP                         1 | 11
+.
+CMND ADD IX,
+ADD A,[VALUE] - add to registerpair IY
+ 
+Possible Values:                                                  L | T
+BC    - Add IX with carry registerpair BC                         1 | 15
+DE    - Add IX with carry registerpair DE                         1 | 15
+IY    - Add IX with carry registerpair IY                         1 | 15
+SP    - Add IX with carry registerpair SP                         1 | 15
+.
+CMND ADD IY,
+ADD A,[VALUE] - add to registerpair HL
+ 
+Possible Values:                                                  L | T
+BC    - Add HL with carry registerpair BC                         1 | 15
+DE    - Add HL with carry registerpair DE                         1 | 15
+IX    - Add HL with carry registerpair IX                         1 | 15
+SP    - Add HL with carry registerpair SP                         1 | 15
+.
+CMND AND 
+AND [VALUE] - Logical AND to accumulator
+ 
+Possible Values:                                                  L | T 
+Any 8-bit registers (A B C D E H L)                               1 | 4
+Any 8-bit number    (0..255)                                      2 | 7
+ 
+(HL)   - Logical AND with contents of address HL                  1 | 7
+(IX+d) - Logical AND with contents of address IX+d                3 | 19
+(IY+d) - Locical AND with contents of address IX+d                3 | 19
+ 
+d - offset (0..255)
+.
+CMND BIT 
+BIT B,[VALUE] - Test bit b
+ 
+b - bitnumber (0..7)
+ 
+Possible Values:                                                  L | T
+Any 8-bit registers (A B C D E H L)                               2 | 8
+ 
+(HL)   - Test bit b of location (HL)                              2 | 12
+(IX+d) - Test bit b of location (IX+d)                            4 | 20
+(IY+d) - Test bit b of location (IY+d)                            4 | 20
+ 
+d - offset (0..255)
+.
+CMND CALL 
+CALL [VALUE] - Call subroutine at location [VALUE]
+CALL cc,[VALUE] - Call subroutine at location [VALUE]             L | T
+                  if condition CC is true                         3 | 17
+                  else continue                                   3 | 10
+Possible conditions (CC):
+C, NC, Z, NZ, M, P, PE, PO
+ 
+Possible Values:
+Word ($0000..$FFFF)
+.
+CMND CFF
+CFF - Complement carry flag                                       L | T
+                                                                  1 | 4 
+.
+CMND CP 
+CP [VALUE] - Compare value with accumulator
+
+Possible Values:                                                  L | T
+Any 8-bit registers (A B C D E H L)                               1 | 4
+Any 8-bit number    (0..255)                                      2 | 7
+ 
+(HL)   - Compare with accumulator contents of address HL          1 | 7
+(IX+d) - Compare with accumulator contents of address IX+d        3 | 19
+(IY+d) - Compare with accumulator contents of address IX+d        3 | 19
+ 
+d - offset (0..255)
+.
+CMND CPD
+CPD - Compare location (HL) and accumulator                       L | T
+      Decrement HL and BC                                         2 | 16
+.
+CMND CPDR
+CPDR - Perform a CPD                                              L | T
+	 and repeat until BC=0 or Z=1                               2 | 21
+       else continue                                              2 | 16
+
+CPD = Compare location (HL) and accumulator
+      decrement HL and BC
+.
+CMND CPI
+CPI - Compare location (HL) and accumulator                       L | T
+      increase HL, decrease BC                                    2 | 16
+.
+CMND CPIR
+CPIR - Perform a CPI                                              L | T
+       and repeat until BC=0                                      2 | 21
+       else continue                                              2 | 16
+
+CPI = Compare location (HL) and accumulator
+      increase HL, decrease BC
+.
+CMND CPL
+                                                                  L | T
+CPL - Complement accumulator (1's complement)                     1 | 4
+.
+CMND DAA
+                                                                  L | T
+DAA - Decimal adjust accumulator                                  1 | 4
+.
+CMND DEC 
+DEC [VALUE] - Decrement of value
+
+Possible Values:                                                  L | T
+Any 8-bit registers (A B C D E H L)                               1 | 4
+
+(HL)   - Decrease contents of address HL                          1 | 11
+(IX+d) - Decrease contents of address IX+d                        3 | 23
+(IY+d) - Decrease contents of address IX+d                        3 | 23
+IX     - Decrease IX                                              2 | 10
+IY     - Decrease IY                                              2 | 10
+BC     - Decrease BC                                              1 | 6
+DE     - Decrease DE                                              1 | 6
+HL     - Decrease HL                                              1 | 6
+SP     - Decrease SP                                              1 | 6
+
+d - offset (0..255)
+.
+CMND DI
+                                                                  L | T
+DI - Disable interrupts                                           1 | 4
+.
+CMND DJNZ
+                                                                  L | T
+DJNZ [VALUE] - Decrement B and jump relative if B=0               2 | 13
+               else continue                                      2 | 8
+
+Possible Values:
+Any 16-bit number    (0..65535)
+.
+CMND EI
+                                                                  L | T
+EI - Enable interrupts                                            1 | 4
+.
+CMND EX (SP),
+EX (SP),[VALUE] - Exchange the location (SP)
+ 
+Possible Values:                                                  L | T
+HL     - Exchange the location (SP) and HL                        1 | 4
+IX     - Exchange the location (SP) and IX                        2 | 23
+IY     - Exchange the location (SP) and IY                        2 | 23
+.
+CMND EX AF,AF
+                                                                  L | T
+EX AF,AF' - Exchange the contents of AF and AF'                   1 | 4
+.
+CMND EX DE,
+                                                                  L | T
+EX DE,HL - Exchange the contents of DE and HL                     1 | 4
+.
+CMND EXX
+                                                                  L | T
+EXX - Exchange the contents of BC, DE, HL with BC', DE', HL'      1 | 4
+.
+CMND HALT
+                                                                  L | T
+HALT - Halt computer and wait for interrupt                       1 | 4
+.
+CMND IM 
+                                                                  L | T
+IM 0 - Set interrupt mode 0                                       2 | 8
+IM 1 - Set interrupt mode 1                                       2 | 8
+IM 2 - Set interrupt mode 2                                       2 | 8
+.
+
+CMND IN A,
+IN A,[VALUE] - Load the accumulator with input from device
+
+Possible Values:                                                  L | T
+Any 8-bit number    (0..255)                                      2 | 11
+.
+CMND IN B,
+IN B,[VALUE] - Load register B with input from device
+
+Possible Values:                                                  L | T
+C - Load register B with input from device register C             2 | 12
+.
+CMND IN C,
+IN C,[VALUE] - Load register C with input from device
+
+Possible Values:                                                  L | T
+C - Load register B with input from device register C             2 | 12
+.
+CMND IN D,
+IN D,[VALUE] - Load register D with input from device
+
+Possible Values:                                                  L | T
+C - Load register B with input from device register C             2 | 12
+.
+CMND IN E,
+IN E,[VALUE] - Load register E with input from device
+
+Possible Values:                                                  L | T
+C - Load register B with input from device register C             2 | 12
+.
+CMND IN H,
+IN H,[VALUE] - Load register H with input from device
+
+Possible Values:                                                  L | T
+C - Load register B with input from device register C             2 | 12
+.
+CMND IN L,
+IN L,[VALUE] - Load register L with input from device
+
+Possible Values:                                                  L | T
+C - Load register B with input from device register C             2 | 12
+.
+CMND INC
+INC [VALUE] - increase value
+
+Possible Values:                                                  L | T
+Any 8-bit registers (A B C D E H L)                               1 | 4
+
+(HL)     - Increase (HL)                                          1 | 11
+IX       - Increase IX                                            2 | 10
+(IX+d)   - Increase (IX+d)                                        3 | 23
+(IY)     - Increase IY                                            2 | 10
+(IY+d)   - Increase (IY+d)                                        3 | 23
+BC       - Increase BC                                            1 | 6
+DE       - Increase DE                                            1 | 6
+HL       - Increase HL                                            1 | 6
+SP       - Increase SP                                            1 | 6
+
+d - offset (0..255)
+.
+CMND IND
+IND - (HL)=Input from port (C)                                    L | T 
+      Decrement HL and B                                          2   16
+.
+CMND INDR
+                                                                  L | T
+Perform an IND and repeat until B=0                               2 | 21
+               else continue                                      2 | 16
+
+IND = (HL)=Input from port (C)
+      Decrement HL and B
+.
+CMND INI
+INI - (HL)=Input from port (C)                                    L | T
+      HL=HL+1, B=B-1                                              2 | 16
+.
+CMND INIR
+                                                                  L | T
+Perform an INI and repeat until B=0                               2 | 21
+               else continue                                      2 | 16
+               
+INI = (HL)=Input from port (C)
+      HL=HL+1, B=B-1
+.
+CMND JP
+                                                                  L | T
+JP (HL)    - Jump to location stored in HL                        1 | 4
+JP (IX)    - Jump to location stored in IX                        2 | 8
+JP (IY)    - Jump to location stored in IY                        2 | 8
+JP [VALUE] - Jump to location [VALUE]                             3 | 10
+JP cc,[VALUE] - Jump to location [VALUE]                          3 | 10
+                if condition CC is true
+
+Possible conditions (CC):
+C, NC, Z, NZ, M, P, PE, PO
+
+Possible Values:
+Word ($0000..$FFFF)
+.
+CMND JR
+JR [VALUE] - Jump to location [VALUE]                             L | T
+JR cc,[VALUE] - Jump to location [VALUE]                          2 | 12
+                if condition CC is true                           2 | 12
+                else continue                                     2 | 7
+                
+Posible conditions (CC):
+C, NC, NZ, Z
+.
+CMND LD (
+LD (nn),[VALUE] - load location with value              
+
+Possible locations (nn):
+Any 16-bit number    (0..65535)
+
+Possible Values:                                                  L | T
+A                                                                 3 | 13
+HL                                                                3 | 16
+BC, DE, SP                                                        4 | 20
+IX, IY                                                            4 | 20
+.
+CMND LD A,
+LD A,[VALUE] - Load accumulator
+
+Possible Values:                                                  L | T 
+Any 8-bit registers (A B C D E H L)                               1 | 4
+Any 8-bit number    (0..255)                                      2 | 7
+
+I      - Load Interrupt Vector                                    2 | 9
+R      - Load Memory Refresh                                      2 | 9
+(nn)   - Load contents of address nn                              3 | 13
+(BC)   - Load contents of address BC                              1 | 7
+(DE)   - Load contents of address DE                              1 | 7
+(HL)   - Load contents of address HL                              1 | 7
+(IX+d) - Load contents of address IX+d                            3 | 19
+(IY+d) - Load contents of address IX+d                            3 | 19
+.
+CMND LD B,
+LD B,[VALUE] - Load register B
+
+Possible Values:                                                  L | T 
+Any 8-bit registers (A B C D E H L)                               1 | 4
+Any 8-bit number    (0..255)                                      2 | 7
+
+(nn)   - Load contents of address nn                              3 | 13
+(HL)   - Load contents of address HL                              1 | 7
+(IX+d) - Load contents of address IX+d                            3 | 19
+(IY+d) - Load contents of address IX+d                            3 | 19
+.
+CMND LD C,
+LD C,[VALUE] - Load register C 
+
+Possible Values:                                                  L | T 
+Any 8-bit registers (A B C D E H L)                               1 | 4
+Any 8-bit number    (0..255)                                      2 | 7
+
+(nn)   - Load contents of address nn                              3 | 13
+(HL)   - Load contents of address HL                              1 | 7
+(IX+d) - Load contents of address IX+d                            3 | 19
+(IY+d) - Load contents of address IX+d                            3 | 19
+.
+CMND LD D,
+LD D,[VALUE] - Load register D
+
+Possible Values:                                                  L | T 
+Any 8-bit registers (A B C D E H L)                               1 | 4
+Any 8-bit number    (0..255)                                      3 | 7
+
+(nn)   - Load contents of address nn                              3 | 13
+(HL)   - Load contents of address HL                              1 | 7
+(IX+d) - Load contents of address IX+d                            3 | 19
+(IY+d) - Load contents of address IX+d                            3 | 19
+.
+CMND LD E,
+LD E,[VALUE] - Load register E
+
+Possible Values:                                                  L | T 
+Any 8-bit registers (A B C D E H L)                               1 | 4
+Any 8-bit number    (0..255)                                      3 | 7
+
+(nn)   - Load contents of address nn                              3 | 13
+(HL)   - Load contents of address HL                              1 | 7
+(IX+d) - Load contents of address IX+d                            3 | 19
+(IY+d) - Load contents of address IX+d                            3 | 19
+.
+CMND LD L,
+LD L,[VALUE] - Load register L
+
+Possible Values:                                                  L | T 
+Any 8-bit registers (A B C D E H L)                               1 | 4
+Any 8-bit number    (0..255)                                      3 | 7
+
+(nn)   - Load contents of address nn                              3 | 13
+(HL)   - Load contents of address HL                              1 | 7
+(IX+d) - Load contents of address IX+d                            3 | 19
+(IY+d) - Load contents of address IX+d                            3 | 19
+.
+CMND LD H,
+LD H,[VALUE] - Load register H
+
+Possible Values:                                                  L | T 
+Any 8-bit registers (A B C D E H L)                               1 | 4
+Any 8-bit number    (0..255)                                      3 | 7
+
+(nn)   - Load contents of address nn                              3 | 13
+(HL)   - Load contents of address HL                              1 | 7
+(IX+d) - Load contents of address IX+d                            3 | 19
+(IY+d) - Load contents of address IX+d                            3 | 19
+.
+CMND LD (BC),
+                                                                  L | T
+LD (BC),A - Load location (BC) with Accumulator                   1 | 7
+.
+CMND LD (HL),
+LD (HL),[VALUE] - Load location (HL) with Accumulator
+
+Possible Values:                                                  L | T 
+Any 8-bit registers (A B C D E H L)                               1 | 7
+Any 8-bit number    (0..255)                                      2 | 10
+.
+CMND LD (DE),
+                                                                  L | T
+LD (DE),A - Load location (DE) with Accumulator                   1 | 7
+.
+CMND LD BC,
+LD BC,[VALUE] - Load register pair BC
+
+Possible Values:                                                  L | T 
+Any 16-bit number    (0..65535)                                   3 | 10
+
+(nn)   - Load contents of address nn                              4 | 20
+.
+CMND LD DE,
+LD DE,[VALUE] - Load register pair DE
+
+Possible Values:                                                  L | T 
+Any 16-bit number    (0..65535)                                   3 | 10
+
+(nn)   - Load contents of address nn                              4 | 20
+.
+CMND LD HL,
+LD HL,[VALUE] - Load register pair HL
+
+Possible Values:                                                  L | T 
+Any 16-bit number    (0..65535)                                   3 | 10
+
+(nn)   - Load contents of address nn                              3 | 16
+.
+CMND LD SP,
+LD SP,[VALUE] - Load register pair SP
+
+Possible Values:                                                  L | T 
+Any 16-bit number    (0..65535)                                   3 | 10
+
+(nn)   - Load contents of address nn                              4 | 20
+nn     - Load contents of nn                                      4 | 14
+HL     - Load contents of HL                                      1 | 6
+IX, IY - Load contents of IX/IY                                   1 | 10
+.
+CMND LD I,
+                                                                  L | T
+LD I,A - Load register I with accumulator                         2 | 9
+.
+CMND LD IX,
+LD IX,[VALUE] - Load IX with value
+
+Possible Values:                                                  L | T 
+Any 16-bit number    (0..65535)                                   4 | 14
+
+(nn)   - Load contents of address nn                              4 | 20
+.
+CMND LD (IX+D),
+LD (IX+D),[VALUE] - Load (IX+D) with value
+
+D - offset (0..255)
+
+Possible Values:                                                  L | T
+Any 8-bit registers (A B C D E H L)                               3 | 19
+Any 8-bit number    (0..255)                                      4 | 19
+.
+CMND LD (IX+
+LD (IX+D),[VALUE] - Load (IX+D) with value
+
+D - offset (0..255)
+
+Possible Values:                                                  L | T
+Any 8-bit registers (A B C D E H L)                               3 | 19
+Any 8-bit number    (0..255)                                      4 | 19
+.
+CMND LD IY,
+LD IY,[VALUE] - Load IY with value
+
+Possible Values:                                                  L | T 
+Any 16-bit number    (0..65535)                                   4 | 14
+                                                                  4 | 20
+(nn)   - Load contents of address nn
+.
+CMND LD (IY+
+LD (IY+D),[VALUE] - Load (IY+D) with value
+
+D - offset (0..255)
+
+Possible Values:                                                  L | T 
+Any 8-bit number    (0..255)                                      3 | 19
+Any 8-bit registers (A B C D E H L)                               4 | 19
+.
+CMND LD R,
+                                                                  L | T
+LD R,A - Load R with accumulator                                  2 | 9
+.
+CMND LDD
+LDD - Load location (DE) with location (HL)                       L | T
+      decrement DE, HL, BC                                        2 | 16
+.
+CMND LDDR
+                                                                  L | T
+LDDR - Perform an LDD and repeat until BC=0                       2 | 21
+                      else continue                               2 | 16
+                      
+LDD = Load location (DE) with location (HL)
+      decrement DE, HL, BC
+.
+CMND LDI
+                                                                  L | T
+LDI - Load location (DE) with location (HL)                       2 | 16
+      increase DE, HL and decrease BC
+.
+CMND LDIR
+                                                                  L | T
+LDIR - Perform an LDI and repeat until BC=0                       2 | 21
+                      else continue                               2 | 16
+
+LDI = Load location (DE) with location (HL)
+      increase DE, HL and decrease BC
+.
+CMND NEG
+                                                                  L | T
+NEG - Negate accumulator (2's complement)                         2 | 8
+.
+CMND NOP
+                                                                  L | T
+NOP - No operation                                                1 | 4
+.
+CMND OR
+OR [VALUE] - Logical OR to accumulator
+
+Possible Values:                                                  L | T 
+Any 8-bit registers (A B C D E H L)                               1 | 4
+Any 8-bit number    (0..255)                                      2 | 7
+
+(HL)   - Logical OR with contents of address HL                   1 | 7
+(IX+d) - Logical OR with contents of address IX+d                 3 | 19
+(IY+d) - Locical OR with contents of address IX+d                 3 | 19
+
+d - offset (0..255)
+.
+CMND OUTD
+OUTD - Load output port (C) with (HL)                             L | T
+       decrement HL and B                                         2 | 16
+.
+CMND OTDR
+                                                                  L | T
+OTDR - Perform an OUTD and repeat until B=0                       2 | 21
+                       else continue                              2 | 16
+                       
+OUTD = Load output port (C) with (HL)
+       decrement HL and B
+.
+CMND OTIR
+                                                                  L | T
+OTIR - Perform an OUTI and repeat until B=0                       2 | 21
+                       els continue                               2 | 16
+                       
+OUTI = Load output port (C) with (HL)
+       increase HL, decrease B
+.
+CMND OUTI
+OUTI - Load output port (C) with (HL)                             L | T
+       increase HL, decrease B                                    2 | 16
+.
+CMND OUT
+                                                                  L | T
+OUT (n),A - Load output port (n) with accumulator                 2 | 11
+OUT (C),[VALUE] - Load output port (C) with value                 2 | 12
+
+n - byte (0..255)
+
+Possible Values:
+Any 8-bit registers (A B C D E H L)
+.
+CMND POP
+POP [VALUE] - load value with top of the stack
+
+Possible Values:                                                  L | T
+IX, IY                                                             2 | 14
+AF, BC, DE, HL                                                     1 | 10
+.
+CMND PUSH
+PUSH [VALUE] - load value to top of the stack
+
+Possible Values:                                                  L | T
+IX, IY                                                             2 | 15
+AF, BC, DE, HL                                                     1 | 11
+.
+CMND RES
+RES b,[VALUE] - Reset bit b of operand
+
+b - bitnumber (0..7)
+
+Possible Values:                                                  L | T
+Any 8-bit registers (A B C D E H L)                               2 | 8
+
+(HL)    - Reset bit b of contents of address HL                   2 | 15
+(IX+d)  - Reset bit b of contents of address IX+d                 4 | 23
+(IY+d)  - Reset bit b of contents of address IY+d                 4 | 23
+
+d - offset (0..255)
+.
+CMND RET
+                                                                  L | T
+RET - Return from subroutine                                      1 | 10
+RET cc - return from subroutine if contintion (cc) is true        1 | 11
+         else continue                                            1 | 5
+
+Possible conditions (CC):
+C, NC, Z, NZ, M, P, PE, PO
+.
+CMND RETI
+                                                                  L | T
+RETI - Return from interrupt                                      2 | 14
+.
+CMND RETN
+                                                                  L | T
+RETN - Return from non-maskable interrupt                         2 | 14
+.
+CMND RL 
+RL [VALUE] - Rotate left through operand
+
+Possible Values:                                                  L | T
+Any 8-bit registers (A B C D E H L)                               2 | 8
+
+(HL)    - Rotate left through contents of address HL              2 | 15
+(IX+d)  - Rotate left through contents of address IX+d            4 | 23
+(IY+d)  - Rotate left through contents of address IY+d            4 | 23
+
+d - offset (0..255)
+.
+CMND RLA
+                                                                  L | T
+RLA - Rotate left accumulator through carry                       1 | 4
+.
+CMND RLC
+RLC [VALUE] - Rotate location [VALUE] left circular
+
+Possible Values:                                                  L | T
+Any 8-bit registers (A B C D E H L)                               2 | 8
+
+(HL)    - Rotate location (HL) left circular                      2 | 15
+(IX+d)  - Rotate location (IX+d) left circular                    4 | 23
+(IY+d)  - Rotate location (IY+d) left circular                    4 | 23
+
+d - offset (0..255)
+.
+CMND RLCA
+                                                                  L | T
+RLCA - Rotate Left Circular Accumulator                           1 | 4
+.
+CMND RLD
+                                                                  L | T
+RLD - Rotate digit left and right between accumulator and (HL)    2 | 18
+.
+CMND RR 
+RR [VALUE] - Rotate right through operand
+
+Possible Values:                                                  L | T
+Any 8-bit registers (A B C D E H L)                               2 | 8
+
+(HL)    - Rotate right through contents of address HL             2 | 15
+(IX+d)  - Rotate right through contents of address IX+d           4 | 23
+(IY+d)  - Rotate right through contents of address IY+d           4 | 23
+
+d - offset (0..255)
+.
+CMND RRA
+                                                                  L | T
+RRA - Rotate right accumulator through carry                      1 | 4
+.
+CMND RRC
+RRC - Rotate operand right circula
+
+Possible Values:                                                  L | T
+Any 8-bit registers (A B C D E H L)                               2 | 8
+
+(HL)    - Rotate contents of address HL right circula             2 | 15
+(IX+d)  - Rotate contents of address IX+d right circula           4 | 23
+(IY+d)  - Rotate contents of address IY+d right circula           4 | 23
+
+d - offset (0..255)
+.
+CMND RRCA
+                                                                  L | T
+RRCA - Rotate right circular accumulator                          1 | 4
+.
+CMND RRD
+                                                                  L | T
+RRD - Rotate digit right and left between accumulator and (HL)    2 | 18
+.
+CMND RST
+RST [VALUE] - Restart to location [VALUE]
+
+Possible Values:                                                  L | T
+$00, $08, $10, $18, $20, $28, $30, $38                            1 | 11
+.
+CMND SBC A,
+SBC A,[VALUE] - Subtract operand from accumulator with carry
+
+Possible Values:                                                  L | T
+Any 8-bit registers (A B C D E H L)                               1 | 4
+Any 8-bit number    (0..255)                                      2 | 7
+
+(HL)    - Subtract operand from accumulator with carry            1 | 7
+(IX+d)  - Subtract operand from accumulator with carry            3 | 19
+(IY+d)  - Rotate contents of address (IY+d) right circula         3 | 19
+
+d - offset (0..255)
+.
+CMND SBC HL,
+SBC HL,[VALUE] - Subtract register pair from HL with carry
+
+Possible Values:                                                  L | T
+BC, DE, HL, SP                                                    2 | 15
+.
+CMND SCF
+                                                                  L | T
+SCF - Set carry flag (C=1)                                        1 | 4
+.
+CMND SET
+SET b,[VALUE] - Set bit b of value
+
+Possible Values:                                                  L | T
+Any 8-bit registers (A B C D E H L)                               2 | 8
+
+(HL)    - Subtract contents of address HL from acc. with carry    2 | 15
+(IX+d)  - Subtract contents of address IX+d from acc. with carry  4 | 23
+(IY+d)  - Subtract contents of address IY+d from acc. with carry  4 | 23
+
+d - offset (0..255)
+.
+CMND SLA
+SLA - Shift operand left arithmatic
+
+Possible Values:                                                  L | T
+Any 8-bit registers (A B C D E H L)                               2 | 8 
+
+(HL)    - Shift contents of address HL left arithmatic            2 | 15
+(IX+d)  - Shift contents of address IX+d left arithmatic          4 | 23
+(IY+d)  - Shift contents of address IY+d left arithmatic          4 | 23
+
+d - offset (0..255)
+.
+CMND SRA
+SLA - Shift operand right arithmatic
+
+Possible Values:                                                  L | T
+Any 8-bit registers (A B C D E H L)                               2 | 8
+
+(HL)    - Shift contents of address HL right arithmatic           2 | 15
+(IX+d)  - Shift contents of address IX+d right arithmatic         4 | 23
+(IY+d)  - Shift contents of address IY+d right arithmatic         4 | 23
+
+d - offset (0..255)
+.
+CMND SRL
+SRL - Shift operand right logical
+
+Possible Values:                                                  L | T
+Any 8-bit registers (A B C D E H L)                               2 | 8
+
+(HL)    - Shift contents of address HL right logical              2 | 15
+(IX+d)  - Shift contents of address IX+d right logical            4 | 23
+(IY+d)  - Shift contents of address IY+d right logical            4 | 23
+
+d - offset (0..255)
+.
+CMND SUB
+SUB [VALUE] - Subtract operand from accumulator
+
+Possible Values:                                                  L | T
+Any 8-bit registers (A B C D E H L)                               1 | 4
+Any 8-bit number    (0..255)                                      2 | 7
+
+(HL)     - Subtract contents of address HL from accumulator       1 | 7
+(IX+d)   - Subtract contents of address (IX+d) from accumulator   3 | 19
+(IY+d)   - Subtract contents of address (IY+d) from accumulator   3 | 19
+
+d - offset (0..255)
+.
+CMND XOR
+XOR [VALUE] - Logical XOR to accumulator
+
+Possible Values:                                                  L | T 
+Any 8-bit registers (A B C D E H L)                               1 | 4
+Any 8-bit number    (0..255)                                      2 | 7
+
+(HL)   - Logical XOR with contents of address HL                  1 | 7
+(IX+d) - Logical XOR with contents of address IX+d                3 | 19
+(IY+d) - Locical XOR with contents of address IX+d                3 | 19
+
+d - offset (0..255)
+.

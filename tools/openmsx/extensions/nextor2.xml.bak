@@ -1,0 +1,33 @@
+<?xml version="1.0" ?>
+<!DOCTYPE msxconfig SYSTEM 'msxconfig2.dtd'>
+<msxconfig>
+  <info>
+    <name>Sunrise ATA-IDE (Nextor)</name>
+    <manufacturer>Sunrise/Nextor</manufacturer>
+    <code/>
+    <release_year>1995</release_year>
+    <description>ATA-IDE interface with hard disk.</description>
+    <type>external hard disk</type>
+  </info>
+  <devices>
+    <primary slot="any">
+      <secondary slot="any">
+        <SunriseIDE id="Sunrise IDE">
+          <mem base="0x0000" size="0x10000"/>
+          <rom>
+            <filename>nextor.rom</filename>
+            <sha1>d97c9b4e936d999954ac89173d0d69bc7fc88d7b</sha1>
+          </rom>
+          <master>
+            <type>IDEHD</type>
+            <filename>hd.dsk</filename>
+            <size>100</size>
+          </master>
+          <slave>
+            <type>IDECDROM</type>
+          </slave>
+        </SunriseIDE>
+      </secondary>
+    </primary>
+  </devices>
+</msxconfig>

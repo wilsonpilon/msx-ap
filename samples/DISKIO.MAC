@@ -1,0 +1,32 @@
+.z80
+
+SETDTA  EQU 1Ah                 ;Seta o DTA de leitura
+BDOS    EQU 0005h               ;Entrada da BDOS
+RDABS   EQU 2Fh                 ;Le setor lofico do disco
+
+        EXTRN INI_DHS
+
+CSEG
+
+;-------------------------------------------------------------------------;
+; Esta rotina le um setor do disco e mostra na tela formatada             ;
+;                                                                         ;
+;      Usa: INI_DHS                                                       ;
+;                                                                         ;
+;-------------------------------------------------------------------------;
+RD_SEC:
+        ld de,SECTOR            ;Endereco inicial da DTA
+        ld c,SETDTA             ;Seta a DTA para o DOS
+        call BDOS
+        ld de,0                 ;Numero do primeiro setor a ler
+        ld h,1                  ;Numero de setores a ler
+        ld l,0                  ;Numero do drive (0=A:)
+        ld c,RDABS              ;Efetua a leitura
+        call BDOS
+        call INI_DHS            ;Mostra o setor
+        jp 0                    ;Encerra
+
+DSEG
+        EXTRN SECTOR            ;Define a DTA para SECTOR
+
+END RD_SEC
