@@ -1,0 +1,188 @@
+## ***** Menu Adventures *****************************************************
+## * Programa de inicializacao do projeto BASPRO: MSX Adventures Programming
+## * cria um menu em SCREEN IV com a relacao de todos os programas disponiveis
+## *
+include "basic.bad"
+
+
+## ***** Declaracoes de Variaveis usadas pelo programa ***********************
+declare cursor, topomenu, opcoes, comando, descricao, parametro, extensao
+declare maxopcao, bottonmenu, limite, help
+
+## ***** Definicoes/Macros usadas pelo programa ******************************
+define [endbasic][&HBFFF]
+define [stringspace][2000]
+define [asmfile]["msxap.bin"]
+
+include "fonte.bad"
+include "screen4.bad"
+include "main.bad"
+
+
+
+## ***** Menu Principal ******************************************************
+## *
+{menu}
+    gosub {opcao_corrente}:
+    gosub {help}
+    [clrbuffer]
+    [waitkey]
+    gosub {limpa_opcao}:
+    [cDOWN] cursor +=1:
+        if cursor > limite then cursor = limite
+    [cUP] cursor -=1:
+        if cursor < 1 then cursor = 1
+    [cESC] return
+    [cENTER] gosub {processa_menu}
+    goto {menu}
+
+
+## ***** Processa a opcao escolhida pelo menu ********************************
+## *
+{processa_menu}
+    if comando$(cursor) = "bas" _
+        then _
+        temp$ = parametro$(cursor) + "." + extensao$(cursor):
+        run $temp
+    if comando$(cursor) = "com" _
+        then _
+        gosub {comandos}
+    return
+
+
+## ***** Processa comandos disponiveis pelo menu *****************************
+## *
+{comandos}
+    gosub {trim_lower}
+    [debug]cursor
+    [debug]temp$
+    if temp$ = "files" _
+        then _
+        [debug]"Saida":
+        files parametro$(cursor)
+    [waitkey]
+    return
+
+{trim_lower}
+    temp$=""
+    for contadori=1 to len(descricao$(cursor)):
+        temp$=mid$(descricao$(cursor),contadori,1):
+        temp=asc$(temp$):
+        if (temp <=65) and (temp <= 97) then temp = temp - 65 + 97
+        if temp <> 32 then temp$ = temp$ + chr$(temp)
+    next contadori:
+    return
+
+## ***** Mostra HELP da opcao selecionada ************************************
+## *
+{help}
+    for contadori=1 to 17:
+        locate 14,2+contadori:
+        print help$(cursor,contadori):
+    next contadori:
+    return
+
+
+
+
+## ***** Carrega as opcoes e prepara o menu ajustando a quantidade de itens **
+## * Verifica todos os DATA da primeira parte ate encontrar o @@
+{carrega_menu}
+    opcoes = 0:
+    restore {data_menu}
+    read temp$, temp$, temp$, temp$:
+    if temp$ <> "@@" then _
+        opcoes += 1:
+        goto {@}
+    dim comando$(opcoes):
+    dim descricao$(opcoes):
+    dim parametro$(opcoes):
+    dim extensao$(opcoes):
+
+    restore {data_menu}:
+    for contadori=1 to opcoes:
+        read comando$(contadori):
+        read descricao$(contadori):
+        read parametro$(contadori):
+        read extensao$(contadori):
+    next contadori
+    maxopcao = opcoes:
+    bottonmenu = 18:
+    topomenu = 1:
+    cursor = 1:
+    if maxopcao>bottonmenu then _
+        limite=bottonmenu _
+    else _
+        limite=maxopcao
+    return
+
+## ***** Mostra o menu de opcoes *********************************************
+## * 
+{show_menu}
+    for contadori=1 to limite:
+        locate 2,2+contadori:
+        print parametro$(contadori):
+    next contadori:
+    return
+
+## ***** Mostra opcao corrente ***********************************************
+## *
+{opcao_corrente}
+    temp$="":
+    for contadori=1 to 9:
+        temp$=temp$+chr$(asc(mid$(parametro$(cursor),contadori,1))+96):
+    next contadori:
+    locate 2,2+cursor:
+    print temp$:
+    return
+
+## ***** Desmarca opcao corrente *********************************************
+## *
+{limpa_opcao}
+    locate 2,2+cursor:
+    print parametro$(cursor):
+    return
+
+
+
+
+
+## ***** Dados do Menu *******************************************************
+## Dados das opcoes e dos programas para criacao do menu de programas
+{data_menu}
+    data com,Files                  ,*.*      ,@, _
+         bas,Wizard's Quest         ,wquest   ,bas, _
+         bas,Snow White             ,snow    ,bas, _
+         bas,Journey Through Space  ,jspace  ,bas, _
+         @@@,@@                     ,@@       ,@@
+
+
+## ***** Dados de Ajuda de cada Programa *************************************
+{carrega_help}
+    dim help$(maxopcao,17):
+    for contadore=1 to maxopcao:
+        for contadori=1 to 17:
+            help$(contadore,contadori) = "                ":
+        next contadori:
+    next contadore
+    help$(1,1)        = "FILES           ":
+        help$(1,2)    = "=====           ":
+        help$(1,4)    = "Mostra o direto-":
+        help$(1,5)    = "rio do disco.   ":
+    help$(2,1)        = "Wizard's Quest  ":
+        help$(2,2)    = "==============  ":
+        help$(2,4)    = "Adventure, MSX 1"
+        help$(2,5)    = "Ajude um velho  ":
+        help$(2,6)    = "mago a recuperar":
+        help$(2,7)    = "seus 10 tesouros":
+        help$(2,8)    = "roubados por um ":
+        help$(2,9)    = "feiticeiro e    ":
+        help$(2,10)   = "agora protegidos"
+        help$(2,11)   = "por criaturas do":
+        help$(2,12)   = "mal!            ":
+    help$(3,1)        = "Snow White      ":
+        help$(3,2)    = "=============   ":
+    help$(4,1)        = "Space Journey   ":
+        help$(4,2)    = "=============== ":
+    return
+

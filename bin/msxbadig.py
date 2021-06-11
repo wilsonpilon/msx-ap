@@ -1294,7 +1294,7 @@ if output_format == 'T' or output_format == 'B':
         if is_from_build:
             args_token = list(set(btarg))
             show_log('', ''.join(['With ', 'args ', ' '.join(args_token)]), 3, bullet=0)
-        batoken = ['python3', '-u', batoken_filepath, file_save, btarg[0], btarg[1], btarg[2], btarg[3]]
+        batoken = ['python', '-u', batoken_filepath, file_save, btarg[0], btarg[1], btarg[2], btarg[3]]
         btoutput = subprocess.check_output(batoken)
         for line in btoutput:
             btline += chr(line)

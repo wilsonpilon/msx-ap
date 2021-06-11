@@ -18,9 +18,9 @@ rem          Tools: Diretorio que contem ferramentas necessarias para
 rem                 a compilacao e criacao dos discos
 rem          Build: Diretorio de destino dos arquivos compilados e 
 rem                 imagem de disco
-set SourceFile=menu
-set DiskName=menu.dsk
-set COMname=menu
+set SourceFile=msxap
+set DiskName=msxap.dsk
+set COMname=msxap
 set MakeAutoexec=true
 set MakeDOS=true
 set MakeBAD=false
